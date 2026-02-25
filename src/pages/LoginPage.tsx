@@ -31,11 +31,11 @@ export function LoginPage() {
   };
 
   return (
-    <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-gray-950' : 'bg-slate-100'} relative overflow-hidden`}>
+    <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-black' : 'bg-slate-100'} relative overflow-hidden`}>
       <button
         onClick={toggleTheme}
         className={`absolute top-6 right-6 p-3 rounded-xl transition-all duration-200 ${
-          isDark ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-white text-gray-600'
+          isDark ? 'hover:bg-gray-900 text-gray-500' : 'hover:bg-white text-gray-600'
         }`}
       >
         {isDark ? (
@@ -60,7 +60,7 @@ export function LoginPage() {
 
       <div className={`relative w-full max-w-md p-8 rounded-2xl ${
         isDark 
-          ? 'bg-gray-900/80 backdrop-blur-xl border border-gray-800 shadow-2xl shadow-black/50' 
+          ? 'bg-[#18191b] backdrop-blur-xl border border-[#18191b] shadow-2xl' 
           : 'bg-white/80 backdrop-blur-xl border border-white/20 shadow-2xl'
       }`}>
         <div className="flex flex-col items-center mb-8">
@@ -86,7 +86,7 @@ export function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               className={`w-full px-4 py-3 rounded-xl border transition-all duration-200 ${
                 isDark 
-                  ? 'bg-gray-800/50 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20' 
+                  ? 'bg-[#18191b] border-[#18191b] text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20' 
                   : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
               }`}
               placeholder="warehouse@test.com or owner@test.com"
@@ -103,7 +103,7 @@ export function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               className={`w-full px-4 py-3 rounded-xl border transition-all duration-200 ${
                 isDark 
-                  ? 'bg-gray-800/50 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20' 
+                  ? 'bg-[#18191b] border-[#18191b] text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20' 
                   : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
               }`}
               placeholder="Enter any password"
