@@ -20,7 +20,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           className={`flex items-center mt-4 justify-between px-8 backdrop-blur-sm h-20 ${
             isDark
               ? "bg-black/80 border-[#18191b]"
-              : "bg-white/80 border-gray-200"
+              : "bg-slate-50 border-gray-200"
           }`}
         >
           <div className="flex items-center gap-4">
