@@ -11,6 +11,20 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { isDark, toggleTheme } = useTheme();
   const { user } = useAuth();
 
+  const getWelcomeTitle = () => {
+    if (user?.role === 'warehouse') {
+      return 'Welcome Back, Warehouse Manager!';
+    }
+    return 'Welcome Back, Business Owner!';
+  };
+
+  const getWelcomeSubtitle = () => {
+    if (user?.role === 'warehouse') {
+      return 'Manage your inventory efficiently.';
+    }
+    return 'Your business at a glance.';
+  };
+
   return (
     <div className={`flex min-h-screen ${isDark ? "bg-black" : "bg-slate-50"}`}>
       <Sidebar />
@@ -28,12 +42,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <h2
                 className={`text-3xl font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
               >
-                Welcome Back, Business Owner!
+                {getWelcomeTitle()}
               </h2>
               <p
                 className={`mt-1 ${isDark ? "text-gray-500" : "text-gray-500"}`}
               >
-                Your business at a glance.
+                {getWelcomeSubtitle()}
               </p>
             </div>
           </div>

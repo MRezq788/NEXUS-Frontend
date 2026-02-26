@@ -4,6 +4,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthLayout } from './components/layout/AuthLayout';
 import { DashboardLayout } from './components/layout/DashboardLayout';
 import { Dashboard } from './pages/Dashboard';
+import { StockPage } from './pages/StockPage';
 import { LoginPage } from './pages/LoginPage';
 import { UnauthorizedPage } from './pages/UnauthorizedPage';
 
@@ -22,6 +23,18 @@ function App() {
                 <AuthLayout>
                   <DashboardLayout>
                     <Dashboard />
+                  </DashboardLayout>
+                </AuthLayout>
+              }
+            />
+            
+            {/* New Stock Route for Warehouse Users */}
+            <Route
+              path="/dashboard/stock"
+              element={
+                <AuthLayout allowedRoles={['warehouse']}>
+                  <DashboardLayout>
+                    <StockPage />
                   </DashboardLayout>
                 </AuthLayout>
               }
