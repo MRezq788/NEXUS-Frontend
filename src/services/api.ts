@@ -84,3 +84,8 @@ export async function deleteProductsBatch(ids: string[]): Promise<void> {
     body: JSON.stringify({ ids }),
   });
 }
+export async function getProductStats(): Promise<{ total: number; inStock: number; outOfStock: number }> {
+  const response = await fetchWithAuth(`${API_BASE_URL}/products/stats`);
+  // Handle both wrapped and unwrapped responses
+  return response.data || response;
+}

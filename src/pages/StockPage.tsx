@@ -7,6 +7,7 @@ import {
   updateProduct,
   deleteProduct,
   deleteProductsBatch,
+  getProductStats,
   type PaginatedResponse,
 } from "../services/api";
 
@@ -788,6 +789,14 @@ export function StockPage() {
 
   const [isVisible, setIsVisible] = useState(false);
 
+    // Statistics state - NEW
+  const [stats, setStats] = useState({
+    total: 0,
+    inStock: 0,
+    outOfStock: 0,
+  });
+  const [isStatsLoading, setIsStatsLoading] = useState(false);
+
   useEffect(() => {
     setIsVisible(true);
   }, []);
@@ -815,9 +824,25 @@ export function StockPage() {
     }
   }, [currentPage, searchQuery, filterStatus]);
 
+  // Fetch statistics from backend
+  const fetchStats = useCallback(async () => {
+    setIsStatsLoading(true);
+    try {
+      const statsData = await getProductStats();
+      setStats(statsData);
+    } catch (error) {
+      console.error("Failed to fetch stats:", error);
+    } finally {
+      setIsStatsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchProducts();
-  }, [fetchProducts]);
+    fetchStats();
+  }, [fetchProducts, fetchStats]);
+
+  
 
   // ==================== HELPERS ====================
 
@@ -830,13 +855,6 @@ export function StockPage() {
 
   const computeStatus = (qty: number): ProductStatus => {
     return qty === 0 ? "Out of Stock" : "In Stock";
-  };
-
-  // Stats calculation
-  const stats = {
-    total: totalProducts,
-    inStock: products.filter((p) => p.status === "In Stock").length + (currentPage - 1) * ITEMS_PER_PAGE,
-    outOfStock: products.filter((p) => p.status === "Out of Stock").length,
   };
 
   // ==================== HANDLERS ====================
@@ -895,6 +913,7 @@ export function StockPage() {
         try {
           await deleteProduct(id);
           showToast("Product deleted successfully", "success");
+          fetchStats(); // ADD THIS - Refresh stats after delete
           if (products.length === 1 && currentPage > 1) {
             setCurrentPage(currentPage - 1);
           } else {
@@ -924,6 +943,7 @@ export function StockPage() {
         try {
           await deleteProductsBatch(Array.from(selectedProducts));
           showToast(`${selectedProducts.size} products deleted successfully`, "success");
+          fetchStats();
           setSelectedProducts(new Set());
           fetchProducts();
         } catch (error) {
@@ -942,17 +962,29 @@ export function StockPage() {
     
     try {
       if (editingProduct) {
+        // Check if status changed - OPTIMIZATION
+        const oldStatus = editingProduct.status;
+        const newStatus = computeStatus(productData.quantity || 0);
+        const statusChanged = oldStatus !== newStatus;
+
         await updateProduct(editingProduct.id, {
           ...productData,
-          status: computeStatus(productData.quantity || 0),
+          status: newStatus,
         });
         showToast("Product updated successfully", "success");
+        
+        // Only fetch stats if status changed - OPTIMIZATION
+        if (statusChanged) {
+          fetchStats();
+        }
       } else {
+        // Adding new product - always fetch stats
         await createProduct({
           ...productData,
           status: computeStatus(productData.quantity || 0),
         });
         showToast("Product added successfully", "success");
+        fetchStats(); // ADD THIS - Refresh stats after add
       }
       fetchProducts();
     } catch (error) {
@@ -999,33 +1031,33 @@ export function StockPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         <StatCard
           title="Total Items"
-          value={stats.total}
+          value={stats.total} // CHANGED from stats.total
           subtitle="Total items in inventory"
           icon="📦"
           color="blue"
           isDark={isDark}
           delay={100}
-          isLoading={isLoading}
+          isLoading={isStatsLoading} // CHANGED to isStatsLoading
         />
         <StatCard
           title="In Stock Items"
-          value={stats.inStock}
+          value={stats.inStock} // CHANGED from stats.inStock
           subtitle="Items currently available"
           icon="✅"
           color="green"
           isDark={isDark}
           delay={200}
-          isLoading={isLoading}
+          isLoading={isStatsLoading} // CHANGED to isStatsLoading
         />
         <StatCard
           title="Out of Stock Items"
-          value={stats.outOfStock}
+          value={stats.outOfStock} // CHANGED from stats.outOfStock
           subtitle="Items currently unavailable"
           icon="❌"
           color="red"
           isDark={isDark}
           delay={300}
-          isLoading={isLoading}
+          isLoading={isStatsLoading} // CHANGED to isStatsLoading
         />
       </div>
 
