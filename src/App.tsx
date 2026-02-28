@@ -6,6 +6,7 @@ import { DashboardLayout } from './components/layout/DashboardLayout';
 import { Dashboard } from './pages/Dashboard';
 import { LoginPage } from './pages/LoginPage';
 import { UnauthorizedPage } from './pages/UnauthorizedPage';
+import { Inventory } from './pages/Inventory';
 
 function App() {
   return (
@@ -22,6 +23,17 @@ function App() {
                 <AuthLayout>
                   <DashboardLayout>
                     <Dashboard />
+                  </DashboardLayout>
+                </AuthLayout>
+              }
+            />
+
+            <Route
+              path="/dashboard/inventory"
+              element={
+                <AuthLayout allowedRoles={['business_owner']}>
+                  <DashboardLayout>
+                    <Inventory />
                   </DashboardLayout>
                 </AuthLayout>
               }

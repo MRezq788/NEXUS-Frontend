@@ -107,6 +107,7 @@ export function Sidebar() {
             >
               <NavLink
                 to={tab.route}
+                end
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
                     isActive
