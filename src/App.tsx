@@ -4,8 +4,11 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthLayout } from './components/layout/AuthLayout';
 import { DashboardLayout } from './components/layout/DashboardLayout';
 import { Dashboard } from './pages/Dashboard';
+import { StockPage } from './pages/StockPage';
 import { LoginPage } from './pages/LoginPage';
 import { UnauthorizedPage } from './pages/UnauthorizedPage';
+import { OrdersPage } from './pages/OrdersPage';
+import { OrderDetailsPage } from './pages/OrderDetailsPage';
 
 function App() {
   return (
@@ -27,7 +30,35 @@ function App() {
               }
             />
             
-            <Route path="/" element={<h1>Welcome to the Home Page</h1>} />
+            {/* New Stock Route for Warehouse Users */}
+            <Route
+              path="/dashboard/stock"
+              element={
+                <AuthLayout allowedRoles={['warehouse']}>
+                  <DashboardLayout>
+                    <StockPage />
+                  </DashboardLayout>
+                </AuthLayout>
+              }
+            />
+
+            <Route path="/dashboard/orders" element={
+                <AuthLayout allowedRoles={['warehouse']}>
+                  <DashboardLayout>
+                    <OrdersPage />
+                  </DashboardLayout>
+                </AuthLayout>
+              } />
+
+            <Route path="/dashboard/orders/:orderId" element={
+                <AuthLayout allowedRoles={['warehouse']}>
+                  <DashboardLayout>
+                    <OrderDetailsPage />
+                  </DashboardLayout>
+                </AuthLayout>
+              } />
+
+            <Route path="/" element={<LoginPage />} />
           </Routes>
         </Router>
       </ThemeProvider>
