@@ -26,3 +26,21 @@ export interface Product {
   category: string; // Made required
   lastUpdated: string;
 }
+
+// Add these to your existing types.ts file
+
+export interface OrderProduct {
+  productId: string;
+  quantity: number;
+}
+
+export interface Order {
+  id: string;
+  buyer: string; // name or email
+  total: number;
+  status: 'pending' | 'processing' | 'completed' | 'cancelled';
+  createdAt: string;
+  products: OrderProduct[];
+}
+
+export type OrderStatus = 'pending' | 'processing' | 'completed' | 'cancelled';

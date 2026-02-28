@@ -1,4 +1,4 @@
-import type { Product, ProductStatus } from "../config/types";
+import type { Order, OrderStatus, Product, ProductStatus } from "../config/types";
 
 const API_BASE_URL = "http://localhost:3000/api";
 
@@ -87,5 +87,54 @@ export async function deleteProductsBatch(ids: string[]): Promise<void> {
 export async function getProductStats(): Promise<{ total: number; inStock: number; outOfStock: number }> {
   const response = await fetchWithAuth(`${API_BASE_URL}/products/stats`);
   // Handle both wrapped and unwrapped responses
+  return response.data || response;
+}
+
+// ==================== ORDERS API ====================
+
+export async function getOrders(status?: OrderStatus): Promise<Order[]> {
+  const queryParams = new URLSearchParams();
+  if (status) {
+    queryParams.append('status', status.toLocaleLowerCase());
+  }
+  
+  const query = queryParams.toString();
+  const url = `${API_BASE_URL}/orders${query ? `?${query}` : ''}`;
+  
+  const response = await fetchWithAuth(url);
+  return response.data || response;
+}
+
+export async function getOrderById(orderId: string): Promise<Order> {
+  const response = await fetchWithAuth(`${API_BASE_URL}/orders/${orderId}`);
+  return response.data || response;
+}
+
+export async function updateOrderStatus(orderId: string, status: OrderStatus): Promise<Order> {
+  const response = await fetchWithAuth(`${API_BASE_URL}/orders/${orderId}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+  return response.data || response;
+}
+
+// Accept order - validates stock and deducts quantities
+export async function acceptOrder(orderId: string): Promise<{ success: boolean; message?: string }> {
+  const response = await fetchWithAuth(`${API_BASE_URL}/orders/${orderId}/accept`, {
+    method: "POST",
+  });
+  return response.data || response;
+}
+
+// Reject order - sets status to Cancelled
+export async function rejectOrder(orderId: string): Promise<Order> {
+  const response = await fetchWithAuth(`${API_BASE_URL}/orders/${orderId}/reject`, {
+    method: "POST",
+  });
+  return response.data || response;
+}
+
+export async function getProductById(productId: string): Promise<Product> {
+  const response = await fetchWithAuth(`${API_BASE_URL}/products/${productId}`);
   return response.data || response;
 }

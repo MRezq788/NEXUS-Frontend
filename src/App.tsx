@@ -7,6 +7,8 @@ import { Dashboard } from './pages/Dashboard';
 import { StockPage } from './pages/StockPage';
 import { LoginPage } from './pages/LoginPage';
 import { UnauthorizedPage } from './pages/UnauthorizedPage';
+import { OrdersPage } from './pages/OrdersPage';
+import { OrderDetailsPage } from './pages/OrderDetailsPage';
 
 function App() {
   return (
@@ -39,8 +41,24 @@ function App() {
                 </AuthLayout>
               }
             />
-            
-            <Route path="/" element={<h1>Welcome to the Home Page</h1>} />
+
+            <Route path="/dashboard/orders" element={
+                <AuthLayout allowedRoles={['warehouse']}>
+                  <DashboardLayout>
+                    <OrdersPage />
+                  </DashboardLayout>
+                </AuthLayout>
+              } />
+
+            <Route path="/dashboard/orders/:orderId" element={
+                <AuthLayout allowedRoles={['warehouse']}>
+                  <DashboardLayout>
+                    <OrderDetailsPage />
+                  </DashboardLayout>
+                </AuthLayout>
+              } />
+
+            <Route path="/" element={<LoginPage />} />
           </Routes>
         </Router>
       </ThemeProvider>
