@@ -90,6 +90,22 @@ export async function getProductStats(): Promise<{ total: number; inStock: numbe
   return response.data || response;
 }
 
+// ==================== BATCH UPLOAD ====================
+
+export interface BatchUploadResult {
+  created: number;
+  failed: number;
+  errors: string[];
+}
+
+export async function batchUploadProducts(products: Partial<Product>[]): Promise<BatchUploadResult> {
+  const response = await fetchWithAuth(`${API_BASE_URL}/products/batch-upload`, {
+    method: "POST",
+    body: JSON.stringify({ products }),
+  });
+  return response.data || response;
+}
+
 // ==================== ORDERS API ====================
 
 export async function getOrders(status?: OrderStatus): Promise<Order[]> {
