@@ -40,7 +40,7 @@ interface ApiCountResponse {
 
 const API_URL = "http://localhost:3000/api/business-inventory";
 const PAGE_SIZE = 10;
-const EMAIL = localStorage.getItem('userEmail') || '';
+const EMAIL = localStorage.getItem('userEmail') || 'warehouse1@nexus.com'; // hardcoded for development
 
 // ─── Icon helpers ────────────────────────────────────────────────────────────
 
@@ -273,7 +273,11 @@ export function Inventory() {
         if (debouncedSearch) params.set("search", debouncedSearch);
         if (stockFilter !== "all") params.set("inStock", stockFilter);
 
-        const res = await fetch(`${API_URL}?${params.toString()}`);
+        const res = await fetch(`${API_URL}?${params.toString()}`, {
+            headers: { 
+                "X-User-Email": EMAIL
+            } 
+        });
         const json: ApiResponse = await res.json();
 
         if (!json.success) {
