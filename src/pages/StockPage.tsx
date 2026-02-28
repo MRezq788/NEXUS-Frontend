@@ -182,6 +182,7 @@ const ProductModal = ({
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               disabled={isLoading}
+              maxLength={40}
               className={`w-full px-4 py-2 rounded-xl border ${
                 isDark
                   ? "bg-black border-gray-700 text-white placeholder-gray-500"
@@ -189,6 +190,9 @@ const ProductModal = ({
               } focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50`}
               placeholder="Enter product name"
             />
+            <p className={`text-xs mt-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
+                {formData.name?.length || 0}/40 characters
+            </p>
           </div>
 
           {/* Category - NEW FIELD */}
@@ -201,6 +205,7 @@ const ProductModal = ({
               value={formData.category}
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
               disabled={isLoading}
+              maxLength={20}
               className={`w-full px-4 py-2 rounded-xl border ${
                 isDark
                   ? "bg-black border-gray-700 text-white placeholder-gray-500"
@@ -208,6 +213,9 @@ const ProductModal = ({
               } focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50`}
               placeholder="e.g., Vegetables, Meat, Dairy"
             />
+            <p className={`text-xs mt-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
+                {formData.category?.length || 0}/20 characters
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -218,11 +226,13 @@ const ProductModal = ({
               </label>
               <input
                 type="number"
+                step="0.1"
+                min="0"
                 value={formData.quantity}
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    quantity: parseInt(e.target.value) || 0,
+                    quantity: parseFloat(e.target.value) || 0,
                     status: computeStatus(parseInt(e.target.value) || 0),
                   })
                 }
@@ -234,38 +244,38 @@ const ProductModal = ({
                 } focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50`}
               />
             </div>
-            {/* Unit */}
+            {/* Unit (maximum 20 character)*/}
             <div>
               <label className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}>
                 Unit
               </label>
-              <select
+              <input
+                type="text"
                 value={formData.unit}
-                onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, unit: e.target.value.slice(0, 20) })}
                 disabled={isLoading}
+                maxLength={20}
                 className={`w-full px-4 py-2 rounded-xl border ${
                   isDark
-                    ? "bg-black border-gray-700 text-white"
-                    : "bg-gray-50 border-gray-200 text-gray-900"
+                    ? "bg-black border-gray-700 text-white placeholder-gray-500"
+                    : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400"
                 } focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50`}
-              >
-                <option value="kg">kg</option>
-                <option value="L">L</option>
-                <option value="pcs">pcs</option>
-                <option value="boxes">boxes</option>
-                <option value="trays">trays</option>
-              </select>
+                placeholder="e.g., kg, pcs, etc."
+              />
+              <p className={`text-xs mt-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
+                {formData.unit?.length || 0}/20 characters
+              </p>
             </div>
           </div>
 
-          {/* Price - NEW FIELD */}
+          {/* Price*/}
           <div>
             <label className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}>
               Price ($)
             </label>
             <input
               type="number"
-              step="0.01"
+              step="0.5"
               min="0"
               value={formData.price}
               onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
@@ -275,11 +285,10 @@ const ProductModal = ({
                   ? "bg-black border-gray-700 text-white placeholder-gray-500"
                   : "bg-gray-50 border-gray-200 text-gray-900"
               } focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50`}
-              placeholder="0.00"
             />
           </div>
 
-          {/* Description - Hidden in table but editable here */}
+          {/* Description*/}
           <div>
             <label className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}>
               Description
@@ -289,6 +298,7 @@ const ProductModal = ({
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               disabled={isLoading}
               rows={3}
+              maxLength={250}
               className={`w-full px-4 py-2 rounded-xl border ${
                 isDark
                   ? "bg-black border-gray-700 text-white"
@@ -296,6 +306,9 @@ const ProductModal = ({
               } focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none disabled:opacity-50`}
               placeholder="Enter product description..."
             />
+            <p className={`text-xs mt-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
+                {formData.description?.length || 0}/250 characters
+            </p>
           </div>
 
           {/* Status Display */}
