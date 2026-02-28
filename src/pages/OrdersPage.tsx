@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 import type { Order, OrderStatus } from "../config/types";
-import { getOrders, updateOrderStatus, acceptOrder, rejectOrder } from "../services/api";
+import { getOrders, updateOrderStatus, acceptOrder, rejectOrder, cancelOrder } from "../services/api";
 
 // Status badge component for orders - Updated to match StockPage style
 const OrderStatusBadge = ({ status, isDark }: { status: OrderStatus; isDark: boolean }) => {
@@ -210,6 +210,7 @@ const OrderCard = ({
   onAccept,
   onReject,
   onDeliver,
+  onCancel,
   delay,
 }: {
   order: Order;
@@ -218,6 +219,7 @@ const OrderCard = ({
   onAccept: (order: Order) => void;
   onReject: (order: Order) => void;
   onDeliver: (order: Order) => void;
+  onCancel: (order: Order) => void;
   delay: number;
 }) => {
   const [isVisible, setIsVisible] = useState(false);
@@ -229,7 +231,7 @@ const OrderCard = ({
 
   // Determine which buttons to show based on status
   const showAcceptReject = order.status === "pending";
-  const showDeliver = order.status === "processing";
+  const showDeliverCancel = order.status === "processing";
 
   return (
     <div
@@ -342,19 +344,31 @@ const OrderCard = ({
             </button>
           </>
         )}
-        {showDeliver && (
-          <button
-            onClick={() => onDeliver(order)}
-            className={`w-full px-4 py-2 rounded-xl font-medium text-sm transition-all ${
-              isDark
-                ? "bg-blue-600 hover:bg-blue-700 text-white"
-                : "bg-blue-600 hover:bg-blue-700 text-white"
-            }`}
-          >
-            Mark as Delivered
-          </button>
+        {showDeliverCancel && ( // UPDATED condition
+          <>
+            <button
+              onClick={() => onDeliver(order)}
+              className={`flex-1 px-4 py-2 rounded-xl font-medium text-sm transition-all ${
+                isDark
+                  ? "bg-blue-600 hover:bg-blue-700 text-white"
+                  : "bg-blue-600 hover:bg-blue-700 text-white"
+              }`}
+            >
+              Mark as Delivered
+            </button>
+            <button
+              onClick={() => onCancel(order)}
+              className={`flex-1 px-4 py-2 rounded-xl font-medium text-sm transition-all ${
+                isDark
+                  ? "bg-orange-600 hover:bg-orange-700 text-white"
+                  : "bg-orange-600 hover:bg-orange-700 text-white"
+              }`}
+            >
+              Cancel Order
+            </button>
+          </>
         )}
-        {!showAcceptReject && !showDeliver && (
+        {!showAcceptReject && !showDeliverCancel && (
           <p className={`text-sm text-center w-full py-2 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
             Order {order.status}
           </p>
@@ -577,6 +591,37 @@ export function OrdersPage() {
     });
   };
 
+  // Handle Cancel Order
+  const handleCancelClick = (order: Order) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Cancel Order",
+      message: `Are you sure you want to cancel order #${order.id.slice(-6).toUpperCase()}? This will return all products to your stock.`,
+      confirmText: "Cancel Order",
+      cancelText: "Keep Order",
+      type: "warning",
+      onConfirm: async () => {
+        setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+        setIsActionLoading(true);
+        
+        try {
+          const result = await cancelOrder(order.id);
+          
+          if (result.success) {
+            showToast("Order cancelled and stock restored", "success");
+            fetchOrders();
+          } else {
+            showToast(result.message || "Failed to cancel order", "error");
+          }
+        } catch (error) {
+          showToast(error instanceof Error ? error.message : "Failed to cancel order", "error");
+        } finally {
+          setIsActionLoading(false);
+        }
+      },
+    });
+  };
+
   return (
     <div className="space-y-6">
       <Toast {...toast} isDark={isDark} />
@@ -646,6 +691,7 @@ export function OrdersPage() {
               onAccept={handleAcceptClick}
               onReject={handleRejectClick}
               onDeliver={handleDeliverClick}
+              onCancel={handleCancelClick} // ADD THIS
               delay={index * 50}
             />
           ))}

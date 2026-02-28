@@ -150,6 +150,14 @@ export async function rejectOrder(orderId: string): Promise<Order> {
   return response.data || response;
 }
 
+// Cancel order - restocks products
+export async function cancelOrder(orderId: string): Promise<{ success: boolean; message?: string }> {
+  const response = await fetchWithAuth(`${API_BASE_URL}/orders/${orderId}/cancel`, {
+    method: "POST",
+  });
+  return response.data || response;
+}
+
 export async function getProductById(productId: string): Promise<Product> {
   const response = await fetchWithAuth(`${API_BASE_URL}/products/${productId}`);
   return response.data || response;
