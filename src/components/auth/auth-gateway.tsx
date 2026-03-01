@@ -2,8 +2,19 @@ import { useState, useCallback, type FormEvent } from "react"
 import { useNavigate } from "react-router-dom"
 import { Eye, EyeOff, Loader2, Check } from "lucide-react"
 
-type AuthView = "signIn" | "signUp" | "completeProfile"
-type AccountType = "Business Owner" | "Warehouse" | "App User" | ""
+// --- NEW FIREBASE IMPORTS ---
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  getAdditionalUserInfo
+} from "firebase/auth"
+import type { User } from "firebase/auth"
+import { auth } from "../../config/firbase" 
+
+type AuthView = "signIn" | "signUp" | "completeProfile" | "success"
+type AccountType = "business_owner" | "warehouse" | "app_User" | ""
 
 /* ═══════════════════════════════════════════════
    GOOGLE & APPLE SVG ICONS
@@ -153,73 +164,108 @@ export function AuthGateway() {
     setShowPassword(false)
   }
 
+  // Helper to sync user to backend
+  const syncUserWithBackend = async (user: User, name: string, role: string) => {
+    // 1. Get the JWT token from Firebase Client SDK
+    const token = await user.getIdToken();
+    
+    // 2. Call your strict backend architecture
+    const response = await fetch('http://localhost:3000/api/users/sync', { // Adjust URL based on your env
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        name: name,
+        email: user.email,
+        role: role
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to sync user with backend');
+    }
+  };
+
+
   // --- Firebase placeholder handlers ---
   const handleEmailSignIn = useCallback(async (e: FormEvent) => {
     e.preventDefault()
     setIsEmailLoading(true)
     try {
-      // TODO: signInWithEmailAndPassword(auth, email, password)
-      console.log("handleEmailSignIn", { email, password })
-      await new Promise((r) => setTimeout(r, 1500))
-      navigate("/dashboard")  // <-- add this
+      await signInWithEmailAndPassword(auth, email, password)
+      navigate("/dashboard")
     } catch (err) {
       console.error("Sign in error:", err)
+      // Add toast or error state here for the user
     } finally {
       setIsEmailLoading(false)
     }
   }, [email, password, navigate])
 
-  const handleEmailSignUp = useCallback(
-    async (e: FormEvent) => {
-      e.preventDefault()
-      setIsEmailLoading(true)
-      try {
-        // TODO: Inject createUserWithEmailAndPassword(auth, email, password)
-        // After creation, save { fullName, accountType } to Firestore user doc
-        console.log("handleEmailSignUp →", { fullName, accountType, email, password })
-        await new Promise((r) => setTimeout(r, 1500))
-      } catch (err) {
-        console.error("Sign up error:", err)
-      } finally {
-        setIsEmailLoading(false)
-      }
-    },
-    [fullName, accountType, email, password]
-  )
+  const handleEmailSignUp = useCallback(async (e: FormEvent) => {
+    e.preventDefault()
+    setIsEmailLoading(true)
+    try {
+      // 1. Create user in Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+      
+      // 2. Sync to Backend (creates Firestore document)
+      await syncUserWithBackend(userCredential.user, fullName, accountType)
+      
+      // 3. Navigate to dashboard
+      navigate("/dashboard")
+    } catch (err) {
+      console.error("Sign up error:", err)
+    } finally {
+      setIsEmailLoading(false)
+    }
+  }, [email, password, fullName, accountType, navigate])
 
   const handleGoogleAuth = useCallback(async () => {
     setIsGoogleLoading(true)
     try {
-      // TODO: Inject signInWithPopup(auth, googleProvider)
-      // IMPORTANT: After sign-in, check if user is new:
-      //   const result = await signInWithPopup(auth, googleProvider)
-      //   const isNewUser = getAdditionalUserInfo(result)?.isNewUser
-      //   if (isNewUser) { setView('completeProfile'); setFullName(result.user.displayName || ''); }
-      console.log("handleGoogleAuth → triggered")
-      await new Promise((r) => setTimeout(r, 1500))
+      const provider = new GoogleAuthProvider()
+      const result = await signInWithPopup(auth, provider)
+      
+      // Check if this is their first time logging in
+      const isNewUser = getAdditionalUserInfo(result)?.isNewUser
+
+      if (isNewUser) {
+        // We can't sync to the backend yet because we don't know their role (accountType)
+        setFullName(result.user.displayName || "")
+        setView("completeProfile")
+      } else {
+        // Returning user, just go to dashboard
+        navigate("/dashboard")
+      }
     } catch (err) {
       console.error("Google auth error:", err)
     } finally {
       setIsGoogleLoading(false)
     }
-  }, [])
+  }, [navigate])
 
-  const handleCompleteProfile = useCallback(
-    async (e: FormEvent) => {
-      e.preventDefault()
-      setIsEmailLoading(true)
-      try {
-        // TODO: Save { fullName, accountType } to the authenticated user's Firestore doc
-        console.log("handleCompleteProfile →", { fullName, accountType })
-        await new Promise((r) => setTimeout(r, 1500))
-      } catch (err) {
-        console.error("Complete profile error:", err)
-      } finally {
-        setIsEmailLoading(false)
-      }
-    },
-    [fullName, accountType]
-  )
+  const handleCompleteProfile = useCallback(async (e: FormEvent) => {
+    e.preventDefault()
+    setIsEmailLoading(true)
+    try {
+      const currentUser = auth.currentUser
+      if (!currentUser) throw new Error("No authenticated user found")
+
+      // Sync the new Google user to the backend now that we have their role
+      await syncUserWithBackend(currentUser, fullName, accountType)
+      
+      navigate("/dashboard")
+    } catch (err) {
+      console.error("Complete profile error:", err)
+    } finally {
+      setIsEmailLoading(false)
+    }
+  }, [fullName, accountType, navigate]
+)
 
   // ═══════════════════════════════════════════════
   // INPUT CLASSNAMES
@@ -316,9 +362,9 @@ export function AuthGateway() {
           <label htmlFor="su-account-type" className="text-sm font-medium text-foreground">{"Account Type*"}</label>
           <select id="su-account-type" required value={accountType} onChange={(e) => setAccountType(e.target.value as AccountType)} className={`${inputClass} appearance-none`}>
             <option value="" disabled>Select your account type</option>
-            <option value="Business Owner">Business Owner</option>
-            <option value="Warehouse">Warehouse</option>
-            <option value="App User">App User</option>
+            <option value="business_owner">Business Owner</option>
+            <option value="warehouse">Warehouse</option>
+            <option value="app_user">App User</option>
           </select>
         </fieldset>
 
@@ -371,9 +417,9 @@ export function AuthGateway() {
           <label htmlFor="cp-account-type" className="text-sm font-medium text-foreground">{"Account Type*"}</label>
           <select id="cp-account-type" required value={accountType} onChange={(e) => setAccountType(e.target.value as AccountType)} className={`${inputClass} appearance-none`}>
             <option value="" disabled>Select your account type</option>
-            <option value="Business Owner">Business Owner</option>
-            <option value="Warehouse">Warehouse</option>
-            <option value="App User">App User</option>
+            <option value="business_owner">Business Owner</option>
+            <option value="warehouse">Warehouse</option>
+            <option value="app_user">App User</option>
           </select>
         </fieldset>
 
