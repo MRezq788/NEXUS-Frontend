@@ -1,7 +1,21 @@
+import { useState, useEffect } from "react";
 import type { ReactNode } from "react";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { initializeApp } from "firebase/app";
 import { useTheme } from "../../contexts/ThemeContext";
-import { useAuth } from "../../contexts/AuthContext";
 import { Sidebar } from "./Sidebar";
+
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -9,7 +23,24 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { isDark, toggleTheme } = useTheme();
-  const { user } = useAuth();
+  const [userName, setUserName] = useState("User");
+  const [userRole, setUserRole] = useState("Business Owner");
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        const name = user.email?.split('@')[0] || 'User';
+        setUserName(name.charAt(0).toUpperCase() + name.slice(1));
+        
+        if (user.email?.includes('warehouse')) {
+          setUserRole('Warehouse Manager');
+        } else {
+          setUserRole('Business Owner');
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   return (
     <div className={`flex min-h-screen ${isDark ? "bg-black" : "bg-slate-50"}`}>
@@ -19,8 +50,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <header
           className={`flex items-center mt-4 justify-between px-8 backdrop-blur-sm h-20 ${
             isDark
-              ? "bg-black/80 border-[#18191b]"
-              : "bg-slate-50 border-gray-200"
+                ? "bg-black/80 border-[#18191b]"
+                : "bg-slate-50 border-gray-200"
           }`}
         >
           <div className="flex items-center gap-4">
@@ -28,7 +59,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <h2
                 className={`text-3xl font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
               >
-                Welcome Back, Business Owner!
+                Welcome Back, {userRole}!
               </h2>
               <p
                 className={`mt-1 ${isDark ? "text-gray-500" : "text-gray-500"}`}
@@ -84,7 +115,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               }`}
             >
               <span className="text-white text-sm font-semibold">
-                {user?.name?.charAt(0).toUpperCase() || "U"}
+                {userName.charAt(0).toUpperCase()}
               </span>
             </div>
           </div>

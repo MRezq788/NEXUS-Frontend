@@ -1,9 +1,22 @@
 import { useState, useEffect } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useTheme } from "../../contexts/ThemeContext";
-import { useAuth } from "../../contexts/AuthContext";
+import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
+import { initializeApp } from "firebase/app";
 import type { SidebarTab } from "../../config/types";
 import { sidebarTabs, warehouseTabs } from "../../config/sidebar";
+
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
 const IconComponent = ({ name, isDark }: { name: string; isDark: boolean }) => {
   const color = isDark ? "#9ca3af" : "#6b7280";
@@ -61,14 +74,31 @@ const IconComponent = ({ name, isDark }: { name: string; isDark: boolean }) => {
 
 export function Sidebar() {
   const { isDark } = useTheme();
-  const { user, logout } = useAuth();
+  const [role, setRole] = useState<string>("business_owner");
   const [isVisible, setIsVisible] = useState(false);
+  const navigate = useNavigate();
 
-  const tabs: SidebarTab[] = user?.role === "warehouse" ? warehouseTabs : sidebarTabs;
+  const tabs: SidebarTab[] = role === "warehouse" ? warehouseTabs : sidebarTabs;
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user?.email?.includes('warehouse')) {
+        setRole('warehouse');
+      } else {
+        setRole('business_owner');
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     setIsVisible(true);
   }, []);
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    navigate('/login');
+  };
 
   return (
     <aside
@@ -129,7 +159,7 @@ export function Sidebar() {
 
       <div className={`p-4 border-t ${isDark ? "border-[#18191b]" : "border-gray-100"}`}>
         <button
-          onClick={logout}
+          onClick={handleLogout}
           className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all duration-200 ${
             isDark ? "bg-red-500/10 text-red-400 hover:bg-red-500/20" : "bg-red-50 text-red-600 hover:bg-red-100"
           }`}

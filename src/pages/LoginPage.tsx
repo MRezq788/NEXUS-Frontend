@@ -1,14 +1,26 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { initializeApp } from 'firebase/app';
+
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -18,16 +30,16 @@ export function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-    
-    setTimeout(async () => {
-      const success = await login(email, password);
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      navigate(from, { replace: true });
+    } catch (err: unknown) {
+      console.error('Login failed:', err);
+      setError('Invalid email or password');
+    } finally {
       setIsLoading(false);
-      if (success) {
-        navigate(from, { replace: true });
-      } else {
-        setError('Invalid credentials. Use "warehouse@test.com" or "owner@test.com"');
-      }
-    }, 800);
+    }
   };
 
   return (
@@ -89,7 +101,7 @@ export function LoginPage() {
                   ? 'bg-[#18191b] border-[#18191b] text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20' 
                   : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
               }`}
-              placeholder="warehouse@test.com or owner@test.com"
+              placeholder="owner1@nexus.com"
             />
           </div>
           
@@ -106,7 +118,7 @@ export function LoginPage() {
                   ? 'bg-[#18191b] border-[#18191b] text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20' 
                   : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
               }`}
-              placeholder="Enter any password"
+              placeholder="123456"
             />
           </div>
           
@@ -140,8 +152,8 @@ export function LoginPage() {
         </form>
 
         <div className={`mt-6 text-center text-sm ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-          <p>Demo credentials:</p>
-          <p className="mt-1 font-mono text-xs">warehouse@test.com / owner@test.com</p>
+          <p>Use your Nexus credentials</p>
+          <p className="mt-1 font-mono text-xs">owner1@nexus.com / 123456</p>
         </div>
       </div>
     </div>
