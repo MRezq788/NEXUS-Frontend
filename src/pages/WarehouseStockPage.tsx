@@ -651,11 +651,11 @@ export function StockPage() {
             {/* Empty State */}
             {products.length === 0 && !isLoading && (
               <div className="py-12 text-center">
-                <div className="text-4xl mb-4">📦</div>
-                <p className={`text-lg font-medium ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                <div className="text-7xl mb-4">📦</div>
+                <p className={`text-4xl font-medium ${isDark ? "text-gray-400" : "text-gray-600"}`}>
                   No products found
                 </p>
-                <p className={`text-sm mt-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
+                <p className={`text-lg mt-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
                   Try adjusting your search or filter
                 </p>
               </div>
