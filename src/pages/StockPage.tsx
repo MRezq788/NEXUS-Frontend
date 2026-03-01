@@ -225,6 +225,7 @@ const ProductModal = ({
                 Quantity
               </label>
               <input
+                aria-label="Product quantity"
                 type="number"
                 step="0.1"
                 min="0"
@@ -274,6 +275,7 @@ const ProductModal = ({
               Price ($)
             </label>
             <input
+              aria-label="Product price"
               type="number"
               step="0.5"
               min="0"
@@ -387,6 +389,7 @@ const ProductDetailsModal = ({
             Product Details
           </h3>
           <button
+            aria-label="Close product details modal"
             onClick={onClose}
             className={`p-2 rounded-lg transition-colors ${
               isDark ? "hover:bg-gray-800 text-gray-400" : "hover:bg-gray-100 text-gray-600"
@@ -687,6 +690,7 @@ const Pagination = ({
       </p>
       <div className="flex items-center gap-2">
         <button
+          aria-label="Previous page"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
           className={`p-2 rounded-lg transition-colors ${
@@ -720,6 +724,7 @@ const Pagination = ({
         ))}
 
         <button
+          aria-label="Next page"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
           className={`p-2 rounded-lg transition-colors ${
@@ -908,6 +913,7 @@ const BatchUploadModal = ({
           onDrop={handleDrop}
         >
           <input
+            aria-label="Upload CSV file"
             ref={fileInputRef}
             type="file"
             accept=".csv"
@@ -1113,10 +1119,10 @@ export function StockPage() {
   }, []);
 
   const [isBatchUploadModalOpen, setIsBatchUploadModalOpen] = useState(false);
-  const [csvFile, setCsvFile] = useState<File | null>(null);
-  const [csvPreview, setCsvPreview] = useState<Partial<Product>[]>([]);
-  const [isParsingCsv, setIsParsingCsv] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // const [csvFile, setCsvFile] = useState<File | null>(null);
+  // const [csvPreview, setCsvPreview] = useState<Partial<Product>[]>([]);
+  // const [isParsingCsv, setIsParsingCsv] = useState(false);
+  // const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ==================== API FUNCTIONS ====================
 
@@ -1478,6 +1484,7 @@ export function StockPage() {
               )}
             </div>
             <select
+              aria-label="Filter by stock status"
               value={filterStatus}
               onChange={(e) => {
                 setFilterStatus(e.target.value as ProductStatus | "All");
@@ -1567,6 +1574,7 @@ export function StockPage() {
                   <tr>
                     <th className="px-6 py-4 text-left">
                       <input
+                        aria-label="Select all products"
                         type="checkbox"
                         checked={products.length > 0 && selectedProducts.size === products.length}
                         onChange={handleSelectAll}
@@ -1592,6 +1600,7 @@ export function StockPage() {
                     >
                       <td className="px-6 py-4">
                         <input
+                          aria-label={`Select product ${product.name}`}
                           type="checkbox"
                           checked={selectedProducts.has(product.id)}
                           onChange={() => handleSelectProduct(product.id)}

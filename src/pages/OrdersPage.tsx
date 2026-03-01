@@ -651,6 +651,7 @@ export function OrdersPage() {
             Filter by Status:
           </span>
           <select
+            aria-label="Filter orders by status"
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value as OrderStatus | "All")}
             className={`px-3 py-2 rounded-lg border text-lg ${

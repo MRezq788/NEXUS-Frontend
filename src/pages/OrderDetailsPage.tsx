@@ -160,6 +160,7 @@ const ProductDetailsModal = ({
           </h3>
           <button
             onClick={onClose}
+            aria-label="Close product details"
             className={`p-2 rounded-lg transition-colors ${
               isDark ? "hover:bg-gray-800 text-gray-400" : "hover:bg-gray-100 text-gray-600"
             }`}
@@ -255,6 +256,7 @@ const ProductDetailsModal = ({
         <div className="mt-6">
           <button
             onClick={onClose}
+            aria-label="close product details"
             className={`w-full px-4 py-3 rounded-xl font-medium transition-all ${
               isDark
                 ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
