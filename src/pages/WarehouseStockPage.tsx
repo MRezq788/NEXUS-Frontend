@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+// src/pages/WarehouseStockPage.tsx
+import { useState, useEffect, useCallback } from "react";
 import { useTheme } from "../contexts/ThemeContext";
 import type { Product, ProductStatus } from "../config/types";
 import {
@@ -13,1041 +14,15 @@ import {
   type PaginatedResponse,
 } from "../services/warehouse.inventory.api";
 
-// Status badge component
-const StatusBadge = ({ status, isDark }: { status: ProductStatus; isDark: boolean }) => {
-  const styles = {
-    "In Stock": isDark
-      ? "bg-green-500/20 text-green-400 border border-green-500/30"
-      : "bg-green-100 text-green-700 border border-green-200",
-    "Out of Stock": isDark
-      ? "bg-red-500/20 text-red-400 border border-red-500/30"
-      : "bg-red-100 text-red-700 border border-red-200",
-  };
-
-  return (
-    <span className={`px-3 py-1 rounded-full text-lg font-medium ${styles[status]}`}>
-      {status}
-    </span>
-  );
-};
-
-const getDelayClass = (ms: number) => {
-    // If your delay matches a standard Tailwind value, use it
-    const validDelays = [0, 75, 100, 150, 200, 300, 500, 700, 1000];
-      
-    // Find the closest valid delay (or just ensure your data matches these)
-    if (validDelays.includes(ms)) return `delay-${ms}`; 
-    return 'delay-75'; // Fallback
-  };
-
-// Stat Card Component
-const StatCard = ({
-  title,
-  value,
-  subtitle,
-  icon,
-  color,
-  isDark,
-  delay,
-  isLoading,
-}: {
-  title: string;
-  value: number;
-  subtitle: string;
-  icon: string;
-  color: string;
-  isDark: boolean;
-  delay: number;
-  isLoading?: boolean;
-}) => {
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setIsVisible(true), delay);
-    return () => clearTimeout(timer);
-  }, [delay]);
-
-  const colorStyles: Record<string, { bg: string; text: string; lightBg: string }> = {
-    blue: {
-      bg: "from-blue-500/20 to-blue-600/20",
-      text: "text-blue-400",
-      lightBg: "bg-blue-50",
-    },
-    green: {
-      bg: "from-green-500/20 to-green-600/20",
-      text: "text-green-400",
-      lightBg: "bg-green-50",
-    },
-    red: {
-      bg: "from-red-500/20 to-red-600/20",
-      text: "text-red-400",
-      lightBg: "bg-red-50",
-    },
-  };
-
-  const style = colorStyles[color];
-
-  return (
-    <div
-      className={`relative overflow-hidden p-6 rounded-2xl transition-all duration-500 hover:scale-[1.02] ${
-        isDark
-          ? "bg-[#18191b] border border-gray-800"
-          : "bg-white border border-gray-100 shadow-lg shadow-gray-200/50"
-      } ${getDelayClass(delay)} ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
-    >
-      <div className="flex items-start justify-between">
-        <div>
-          <div
-            className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 text-2xl ${
-              isDark ? `bg-gradient-to-br ${style.bg}` : style.lightBg
-            }`}
-          >
-            {icon}
-          </div>
-          <p className={`text-lg font-medium mb-1 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
-            {title}
-          </p>
-          {isLoading ? (
-            <div className="h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-          ) : (
-            <p className={`text-3xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
-              {value}
-            </p>
-          )}
-          <p className={`text-base mt-2 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
-            {subtitle}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Product Modal Component (Add/Edit) - Updated with Category and Price
-const ProductModal = ({
-  isOpen,
-  onClose,
-  onSave,
-  product,
-  isDark,
-  isLoading,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (product: Partial<Product>) => void;
-  product: Product | null;
-  isDark: boolean;
-  isLoading: boolean;
-}) => {
-  const [formData, setFormData] = useState<Partial<Product>>({
-    name: "",
-    quantity: 0,
-    unit: "kg",
-    price: 0,
-    description: "",
-    category: "",
-  });
-
-  useEffect(() => {
-    if (product) {
-      setFormData(product);
-    } else {
-      setFormData({
-        name: "",
-        quantity: 0,
-        unit: "kg",
-        price: 0,
-        description: "",
-        category: "",
-      });
-    }
-  }, [product, isOpen]);
-
-  const computeStatus = (qty: number): ProductStatus => {
-    return qty === 0 ? "Out of Stock" : "In Stock";
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div
-        className={`w-full max-w-md rounded-2xl p-6 ${
-          isDark ? "bg-[#18191b] border border-gray-800" : "bg-white border border-gray-200"
-        }`}
-      >
-        <h3 className={`text-xl font-bold mb-4 ${isDark ? "text-white" : "text-gray-900"}`}>
-          {product ? "Edit Product" : "Add New Product"}
-        </h3>
-        <div className="space-y-4">
-          {/* Product Name */}
-          <div>
-            <label className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}>
-              Product Name
-            </label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              disabled={isLoading}
-              maxLength={40}
-              className={`w-full px-4 py-2 rounded-xl border ${
-                isDark
-                  ? "bg-black border-gray-700 text-white placeholder-gray-500"
-                  : "bg-gray-50 border-gray-200 text-gray-900"
-              } focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50`}
-              placeholder="Enter product name"
-            />
-            <p className={`text-xs mt-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
-                {formData.name?.length || 0}/40 characters
-            </p>
-          </div>
-
-          {/* Category - NEW FIELD */}
-          <div>
-            <label className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}>
-              Category
-            </label>
-            <input
-              type="text"
-              value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              disabled={isLoading}
-              maxLength={20}
-              className={`w-full px-4 py-2 rounded-xl border ${
-                isDark
-                  ? "bg-black border-gray-700 text-white placeholder-gray-500"
-                  : "bg-gray-50 border-gray-200 text-gray-900"
-              } focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50`}
-              placeholder="e.g., Vegetables, Meat, Dairy"
-            />
-            <p className={`text-xs mt-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
-                {formData.category?.length || 0}/20 characters
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            {/* Quantity */}
-            <div>
-              <label className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}>
-                Quantity
-              </label>
-              <input
-                aria-label="Product quantity"
-                type="number"
-                step="0.1"
-                min="0"
-                value={formData.quantity}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    quantity: parseFloat(e.target.value) || 0,
-                    status: computeStatus(parseInt(e.target.value) || 0),
-                  })
-                }
-                disabled={isLoading}
-                className={`w-full px-4 py-2 rounded-xl border ${
-                  isDark
-                    ? "bg-black border-gray-700 text-white"
-                    : "bg-gray-50 border-gray-200 text-gray-900"
-                } focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50`}
-              />
-            </div>
-            {/* Unit (maximum 20 character)*/}
-            <div>
-              <label className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}>
-                Unit
-              </label>
-              <input
-                type="text"
-                value={formData.unit}
-                onChange={(e) => setFormData({ ...formData, unit: e.target.value.slice(0, 20) })}
-                disabled={isLoading}
-                maxLength={20}
-                className={`w-full px-4 py-2 rounded-xl border ${
-                  isDark
-                    ? "bg-black border-gray-700 text-white placeholder-gray-500"
-                    : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400"
-                } focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50`}
-                placeholder="e.g., kg, pcs, etc."
-              />
-              <p className={`text-xs mt-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
-                {formData.unit?.length || 0}/20 characters
-              </p>
-            </div>
-          </div>
-
-          {/* Price*/}
-          <div>
-            <label className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}>
-              Price ($)
-            </label>
-            <input
-              aria-label="Product price"
-              type="number"
-              step="0.5"
-              min="0"
-              value={formData.price}
-              onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
-              disabled={isLoading}
-              className={`w-full px-4 py-2 rounded-xl border ${
-                isDark
-                  ? "bg-black border-gray-700 text-white placeholder-gray-500"
-                  : "bg-gray-50 border-gray-200 text-gray-900"
-              } focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50`}
-            />
-          </div>
-
-          {/* Description*/}
-          <div>
-            <label className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}>
-              Description
-            </label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              disabled={isLoading}
-              rows={3}
-              maxLength={250}
-              className={`w-full px-4 py-2 rounded-xl border ${
-                isDark
-                  ? "bg-black border-gray-700 text-white"
-                  : "bg-gray-50 border-gray-200 text-gray-900"
-              } focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none disabled:opacity-50`}
-              placeholder="Enter product description..."
-            />
-            <p className={`text-xs mt-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
-                {formData.description?.length || 0}/250 characters
-            </p>
-          </div>
-
-          {/* Status Display */}
-          <div>
-            <label className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}>
-              Status (Auto-computed)
-            </label>
-            <div className={`px-4 py-2 rounded-xl border ${isDark ? "bg-black border-gray-700" : "bg-gray-100 border-gray-200"}`}>
-              <StatusBadge status={computeStatus(formData.quantity || 0)} isDark={isDark} />
-            </div>
-          </div>
-        </div>
-
-        <div className="flex gap-3 mt-6">
-          <button
-            onClick={onClose}
-            disabled={isLoading}
-            className={`flex-1 px-4 py-2 rounded-xl font-medium transition-colors ${
-              isDark
-                ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            } disabled:opacity-50`}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => onSave(formData)}
-            disabled={isLoading}
-            className={`flex-1 px-4 py-2 rounded-xl font-medium text-white transition-all ${
-              isDark
-                ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
-            } disabled:opacity-50 flex items-center justify-center gap-2`}
-          >
-            {isLoading ? (
-              <>
-                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Saving...
-              </>
-            ) : (
-              <>{product ? "Update" : "Add"} Product</>
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Product Details Modal - Updated with Price and Category
-const ProductDetailsModal = ({
-  isOpen,
-  onClose,
-  product,
-  isDark,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  product: Product | null;
-  isDark: boolean;
-}) => {
-  if (!isOpen || !product) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div
-        className={`w-full max-w-lg rounded-2xl p-6 ${
-          isDark ? "bg-[#18191b] border border-gray-800" : "bg-white border border-gray-200"
-        }`}
-      >
-        <div className="flex items-center justify-between mb-6">
-          <h3 className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
-            Product Details
-          </h3>
-          <button
-            aria-label="Close product details modal"
-            onClick={onClose}
-            className={`p-2 rounded-lg transition-colors ${
-              isDark ? "hover:bg-gray-800 text-gray-400" : "hover:bg-gray-100 text-gray-600"
-            }`}
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className={`text-xs uppercase tracking-wider mb-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
-                Product Name
-              </p>
-              <p className={`text-lg font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
-                {product.name}
-              </p>
-            </div>
-            <div>
-              <p className={`text-xs uppercase tracking-wider mb-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
-                Category
-              </p>
-              <p className={`text-base ${isDark ? "text-gray-300" : "text-gray-700"}`}>
-                {product.category}
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <p className={`text-xs uppercase tracking-wider mb-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
-                Quantity
-              </p>
-              <p className={`text-base ${isDark ? "text-gray-300" : "text-gray-700"}`}>
-                {product.quantity} {product.unit}
-              </p>
-            </div>
-            <div>
-              <p className={`text-xs uppercase tracking-wider mb-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
-                Price
-              </p>
-              <p className={`text-base font-semibold ${isDark ? "text-green-400" : "text-green-600"}`}>
-                ${product.price.toFixed(2)}
-              </p>
-            </div>
-            <div>
-              <p className={`text-xs uppercase tracking-wider mb-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
-                Status
-              </p>
-              <StatusBadge status={product.status} isDark={isDark} />
-            </div>
-          </div>
-
-          <div>
-            <p className={`text-xs uppercase tracking-wider mb-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
-              Last Updated
-            </p>
-            <p className={`text-base ${isDark ? "text-gray-300" : "text-gray-700"}`}>
-              {product.lastUpdated}
-            </p>
-          </div>
-
-          <div>
-            <p className={`text-xs uppercase tracking-wider mb-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
-              Description
-            </p>
-            <div
-              className={`p-4 rounded-xl ${
-                isDark ? "bg-black border border-gray-800" : "bg-gray-50 border border-gray-100"
-              }`}
-            >
-              <p className={`text-sm leading-relaxed ${isDark ? "text-gray-300" : "text-gray-700"}`}>
-                {product.description}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-6">
-          <button
-            onClick={onClose}
-            className={`w-full px-4 py-3 rounded-xl font-medium transition-all ${
-              isDark
-                ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Confirmation Modal Component
-const ConfirmationModal = ({
-  isOpen,
-  onClose,
-  onConfirm,
-  title,
-  message,
-  confirmText,
-  cancelText,
-  type,
-  isDark,
-  isLoading,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  title: string;
-  message: string;
-  confirmText: string;
-  cancelText: string;
-  type: "danger" | "warning" | "info";
-  isDark: boolean;
-  isLoading?: boolean;
-}) => {
-  if (!isOpen) return null;
-
-  const typeStyles = {
-    danger: {
-      icon: "text-red-500",
-      bg: isDark ? "bg-red-500/20" : "bg-red-100",
-      button: isDark
-        ? "bg-red-600 hover:bg-red-700 text-white"
-        : "bg-red-600 hover:bg-red-700 text-white",
-    },
-    warning: {
-      icon: "text-yellow-500",
-      bg: isDark ? "bg-yellow-500/20" : "bg-yellow-100",
-      button: isDark
-        ? "bg-yellow-600 hover:bg-yellow-700 text-white"
-        : "bg-yellow-600 hover:bg-yellow-700 text-white",
-    },
-    info: {
-      icon: "text-blue-500",
-      bg: isDark ? "bg-blue-500/20" : "bg-blue-100",
-      button: isDark
-        ? "bg-blue-600 hover:bg-blue-700 text-white"
-        : "bg-blue-600 hover:bg-blue-700 text-white",
-    },
-  };
-
-  const style = typeStyles[type];
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div
-        className={`w-full max-w-md rounded-2xl p-6 ${
-          isDark ? "bg-[#18191b] border border-gray-800" : "bg-white border border-gray-200"
-        }`}
-      >
-        <div className="flex flex-col items-center text-center">
-          <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${style.bg}`}>
-            {type === "danger" && (
-              <svg className={`w-8 h-8 ${style.icon}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            )}
-            {type === "warning" && (
-              <svg className={`w-8 h-8 ${style.icon}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            )}
-            {type === "info" && (
-              <svg className={`w-8 h-8 ${style.icon}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            )}
-          </div>
-
-          <h3 className={`text-xl font-bold mb-2 ${isDark ? "text-white" : "text-gray-900"}`}>
-            {title}
-          </h3>
-          <p className={`text-sm mb-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
-            {message}
-          </p>
-
-          <div className="flex gap-3 w-full">
-            <button
-              onClick={onClose}
-              disabled={isLoading}
-              className={`flex-1 px-4 py-3 rounded-xl font-medium transition-colors ${
-                isDark
-                  ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              } disabled:opacity-50`}
-            >
-              {cancelText}
-            </button>
-            <button
-              onClick={onConfirm}
-              disabled={isLoading}
-              className={`flex-1 px-4 py-3 rounded-xl font-medium transition-all ${style.button} disabled:opacity-50 flex items-center justify-center gap-2`}
-            >
-              {isLoading ? (
-                <>
-                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Processing...
-                </>
-              ) : (
-                confirmText
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Toast Notification Component
-const Toast = ({
-  message,
-  type,
-  isVisible,
-  isDark,
-}: {
-  message: string;
-  type: "success" | "error";
-  isVisible: boolean;
-  isDark: boolean;
-}) => {
-  if (!isVisible) return null;
-
-  return (
-    <div
-      className={`fixed bottom-6 right-6 z-50 px-6 py-4 rounded-xl shadow-lg transform transition-all duration-300 ${
-        isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-      } ${
-        type === "success"
-          ? isDark
-            ? "bg-green-600 text-white"
-            : "bg-green-500 text-white"
-          : isDark
-          ? "bg-red-600 text-white"
-          : "bg-red-500 text-white"
-      }`}
-    >
-      <div className="flex items-center gap-3">
-        {type === "success" ? (
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        ) : (
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        )}
-        <span className="font-medium">{message}</span>
-      </div>
-    </div>
-  );
-};
-
-// Pagination Component
-const Pagination = ({
-  currentPage,
-  totalPages,
-  onPageChange,
-  isDark,
-}: {
-  currentPage: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-  isDark: boolean;
-}) => {
-  const getPageNumbers = () => {
-    const pages: (number | string)[] = [];
-    const maxVisible = 5;
-
-    if (totalPages <= maxVisible) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else {
-      if (currentPage <= 3) {
-        pages.push(1, 2, 3, 4, "...", totalPages);
-      } else if (currentPage >= totalPages - 2) {
-        pages.push(1, "...", totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
-      } else {
-        pages.push(1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages);
-      }
-    }
-    return pages;
-  };
-
-  return (
-    <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-800">
-      <p className={`text-base ${isDark ? "text-gray-400" : "text-gray-600"}`}>
-        Page {currentPage} of {totalPages}
-      </p>
-      <div className="flex items-center gap-2">
-        <button
-          aria-label="Previous page"
-          onClick={() => onPageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-          className={`p-2 rounded-lg transition-colors ${
-            isDark
-              ? "hover:bg-gray-800 text-gray-400 disabled:opacity-30"
-              : "hover:bg-gray-100 text-gray-600 disabled:opacity-30"
-          }`}
-        >
-          <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-
-        {getPageNumbers().map((page, idx) => (
-          <button
-            key={idx}
-            onClick={() => typeof page === "number" && onPageChange(page)}
-            disabled={page === "..."}
-            className={`w-12 h-12 rounded-lg font-medium transition-all ${
-              page === currentPage
-                ? isDark
-                  ? "bg-blue-600 text-white"
-                  : "bg-blue-500 text-white"
-                : isDark
-                ? "hover:bg-gray-800 text-gray-400"
-                : "hover:bg-gray-100 text-gray-600"
-            } ${page === "..." ? "cursor-default" : ""}`}
-          >
-            {page}
-          </button>
-        ))}
-
-        <button
-          aria-label="Next page"
-          onClick={() => onPageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-          className={`p-2 rounded-lg transition-colors ${
-            isDark
-              ? "hover:bg-gray-800 text-gray-400 disabled:opacity-30"
-              : "hover:bg-gray-100 text-gray-600 disabled:opacity-30"
-          }`}
-        >
-          <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-      </div>
-    </div>
-  );
-};
-
-// Batch Upload Modal Component
-const BatchUploadModal = ({
-  isOpen,
-  onClose,
-  onUpload,
-  isDark,
-  isLoading,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  onUpload: (products: Partial<Product>[]) => void;
-  isDark: boolean;
-  isLoading: boolean;
-}) => {
-  const [dragActive, setDragActive] = useState(false);
-  const [fileName, setFileName] = useState("");
-  const [parseError, setParseError] = useState("");
-  const [previewData, setPreviewData] = useState<Partial<Product>[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const resetState = () => {
-    setFileName("");
-    setParseError("");
-    setPreviewData([]);
-    setDragActive(false);
-  };
-
-  const handleClose = () => {
-    resetState();
-    onClose();
-  };
-
-  const parseCSV = (text: string): Partial<Product>[] => {
-    const lines = text.trim().split('\n');
-    if (lines.length < 2) {
-      throw new Error('CSV file is empty or has no data rows');
-    }
-
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-    
-    // Expected columns: product name, category, quantity, unit, price, description
-    const nameIdx = headers.findIndex(h => h.includes('name') || h === 'product');
-    const categoryIdx = headers.findIndex(h => h.includes('category'));
-    const quantityIdx = headers.findIndex(h => h.includes('quantity') || h === 'qty');
-    const unitIdx = headers.findIndex(h => h.includes('unit'));
-    const priceIdx = headers.findIndex(h => h.includes('price'));
-    const descriptionIdx = headers.findIndex(h => h.includes('description') || h === 'desc');
-
-    const products: Partial<Product>[] = [];
-
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) continue;
-
-      // Simple CSV parsing (handles basic commas, for complex cases use a library)
-      const values = line.split(',').map(v => v.trim());
-      
-      const name = nameIdx >= 0 ? values[nameIdx] : '';
-      const quantityStr = quantityIdx >= 0 ? values[quantityIdx] : '';
-      const priceStr = priceIdx >= 0 ? values[priceIdx] : '';
-      
-      // Skip if name is empty or quantity/price are not valid numbers
-      if (!name || name === '') continue;
-      
-      const quantity = parseFloat(quantityStr);
-      const price = parseFloat(priceStr);
-      
-      if (isNaN(quantity) || isNaN(price)) continue;
-
-      products.push({
-        name: name,
-        category: categoryIdx >= 0 ? values[categoryIdx] || 'Uncategorized' : 'Uncategorized',
-        quantity: quantity,
-        unit: unitIdx >= 0 ? values[unitIdx] || 'kg' : 'kg',
-        price: price,
-        description: descriptionIdx >= 0 ? values[descriptionIdx] || '' : '',
-      });
-    }
-
-    return products;
-  };
-
-  const handleFile = (file: File) => {
-    if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
-      setParseError('Please upload a valid CSV file');
-      return;
-    }
-
-    setFileName(file.name);
-    setParseError("");
-    
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const text = e.target?.result as string;
-        const products = parseCSV(text);
-        setPreviewData(products);
-        if (products.length === 0) {
-          setParseError('No valid products found in CSV. Ensure product names exist and quantity/price are valid numbers.');
-        }
-      } catch (err) {
-        setParseError(err instanceof Error ? err.message : 'Failed to parse CSV');
-        setPreviewData([]);
-      }
-    };
-    reader.readAsText(file);
-  };
-
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFile(e.dataTransfer.files[0]);
-    }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    e.preventDefault();
-    if (e.target.files && e.target.files[0]) {
-      handleFile(e.target.files[0]);
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div
-        className={`w-full max-w-2xl rounded-2xl p-6 max-h-[90vh] overflow-y-auto ${
-          isDark ? "bg-[#18191b] border border-gray-800" : "bg-white border border-gray-200"
-        }`}
-      >
-        <h3 className={`text-xl font-bold mb-4 ${isDark ? "text-white" : "text-gray-900"}`}>
-          Batch Upload Products
-        </h3>
-        
-        <p className={`text-sm mb-4 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
-          Upload a CSV file with columns: <strong>Product Name, Category, Quantity, Unit, Price, Description</strong>
-          <br />
-          <span className="text-xs opacity-75">Products will only be added if they have a name and valid numeric quantity/price.</span>
-        </p>
-
-        {/* Drag & Drop Area */}
-        <div
-          className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all ${
-            dragActive
-              ? isDark
-                ? "border-blue-500 bg-blue-500/10"
-                : "border-blue-500 bg-blue-50"
-              : isDark
-              ? "border-gray-700 hover:border-gray-600"
-              : "border-gray-300 hover:border-gray-400"
-          }`}
-          onDragEnter={handleDrag}
-          onDragLeave={handleDrag}
-          onDragOver={handleDrag}
-          onDrop={handleDrop}
-        >
-          <input
-            aria-label="Upload CSV file"
-            ref={fileInputRef}
-            type="file"
-            accept=".csv"
-            onChange={handleChange}
-            className="hidden"
-          />
-          
-          <div className="text-4xl mb-2">📄</div>
-          <p className={`text-lg font-medium mb-2 ${isDark ? "text-white" : "text-gray-900"}`}>
-            {fileName ? fileName : "Drag & drop your CSV file here"}
-          </p>
-          <p className={`text-sm ${isDark ? "text-gray-500" : "text-gray-400"}`}>
-            or{" "}
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className={`font-medium underline ${
-                isDark ? "text-blue-400 hover:text-blue-300" : "text-blue-600 hover:text-blue-700"
-              }`}
-            >
-              browse files
-            </button>
-          </p>
-        </div>
-
-        {/* Error Message */}
-        {parseError && (
-          <div className={`mt-4 p-3 rounded-lg ${
-            isDark ? "bg-red-500/20 text-red-400" : "bg-red-100 text-red-700"
-          }`}>
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="text-sm">{parseError}</span>
-            </div>
-          </div>
-        )}
-
-        {/* Preview Table */}
-        {previewData.length > 0 && (
-          <div className="mt-6">
-            <h4 className={`text-sm font-semibold mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}>
-              Preview ({previewData.length} valid products found)
-            </h4>
-            <div className={`max-h-48 overflow-y-auto rounded-lg border ${
-              isDark ? "border-gray-700" : "border-gray-200"
-            }`}>
-              <table className="w-full text-sm">
-                <thead className={`sticky top-0 ${
-                  isDark ? "bg-gray-800 text-gray-400" : "bg-gray-100 text-gray-600"
-                }`}>
-                  <tr>
-                    <th className="px-3 py-2 text-left">Name</th>
-                    <th className="px-3 py-2 text-left">Category</th>
-                    <th className="px-3 py-2 text-left">Qty</th>
-                    <th className="px-3 py-2 text-left">Unit</th>
-                    <th className="px-3 py-2 text-left">Price</th>
-                  </tr>
-                </thead>
-                <tbody className={`divide-y ${
-                  isDark ? "divide-gray-700 text-gray-300" : "divide-gray-200 text-gray-700"
-                }`}>
-                  {previewData.slice(0, 5).map((product, idx) => (
-                    <tr key={idx}>
-                      <td className="px-3 py-2 font-medium">{product.name}</td>
-                      <td className="px-3 py-2">{product.category}</td>
-                      <td className="px-3 py-2">{product.quantity}</td>
-                      <td className="px-3 py-2">{product.unit}</td>
-                      <td className="px-3 py-2">${product.price?.toFixed(2)}</td>
-                    </tr>
-                  ))}
-                  {previewData.length > 5 && (
-                    <tr>
-                      <td colSpan={5} className={`px-3 py-2 text-center italic ${
-                        isDark ? "text-gray-500" : "text-gray-400"
-                      }`}>
-                        ...and {previewData.length - 5} more
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        <div className="flex gap-3 mt-6">
-          <button
-            onClick={handleClose}
-            disabled={isLoading}
-            className={`flex-1 px-4 py-2 rounded-xl font-medium transition-colors ${
-              isDark
-                ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            } disabled:opacity-50`}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => onUpload(previewData)}
-            disabled={isLoading || previewData.length === 0}
-            className={`flex-1 px-4 py-2 rounded-xl font-medium text-white transition-all ${
-              isDark
-                ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
-            } disabled:opacity-50 flex items-center justify-center gap-2`}
-          >
-            {isLoading ? (
-              <>
-                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Uploading...
-              </>
-            ) : (
-              <>Upload {previewData.length > 0 && `(${previewData.length})`}</>
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ==================== MAIN COMPONENT ====================
+// Import components
+import { StatusBadge } from "../components/warehouse/StatusBadge";
+import { StatCard } from "../components/warehouse/StatCard";
+import { ProductModal } from "../components/warehouse/ProductModal";
+import { ProductDetailsModal } from "../components/warehouse/ProductDetailsModal";
+import { ConfirmationModal } from "../components/warehouse/ConfirmationModal";
+import { Toast } from "../components/warehouse/Toast";
+import { Pagination } from "../components/warehouse/Pagination";
+import { BatchUploadModal } from "../components/warehouse/BatchUploadModal";
 
 export function StockPage() {
   const { isDark } = useTheme();
@@ -1075,6 +50,7 @@ export function StockPage() {
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isBatchUploadModalOpen, setIsBatchUploadModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
 
@@ -1114,7 +90,7 @@ export function StockPage() {
 
   const [isVisible, setIsVisible] = useState(false);
 
-    // Statistics state - NEW
+  // Statistics state
   const [stats, setStats] = useState({
     total: 0,
     inStock: 0,
@@ -1125,12 +101,6 @@ export function StockPage() {
   useEffect(() => {
     setIsVisible(true);
   }, []);
-
-  const [isBatchUploadModalOpen, setIsBatchUploadModalOpen] = useState(false);
-  // const [csvFile, setCsvFile] = useState<File | null>(null);
-  // const [csvPreview, setCsvPreview] = useState<Partial<Product>[]>([]);
-  // const [isParsingCsv, setIsParsingCsv] = useState(false);
-  // const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ==================== API FUNCTIONS ====================
 
@@ -1155,7 +125,6 @@ export function StockPage() {
     }
   }, [currentPage, searchQuery, filterStatus]);
 
-  // Fetch statistics from backend
   const fetchStats = useCallback(async () => {
     setIsStatsLoading(true);
     try {
@@ -1172,8 +141,6 @@ export function StockPage() {
     fetchProducts();
     fetchStats();
   }, [fetchProducts, fetchStats]);
-
-  
 
   // ==================== HELPERS ====================
 
@@ -1244,7 +211,7 @@ export function StockPage() {
         try {
           await deleteProduct(id);
           showToast("Product deleted successfully", "success");
-          fetchStats(); // ADD THIS - Refresh stats after delete
+          fetchStats();
           if (products.length === 1 && currentPage > 1) {
             setCurrentPage(currentPage - 1);
           } else {
@@ -1293,7 +260,6 @@ export function StockPage() {
     
     try {
       if (editingProduct) {
-        // Check if status changed - OPTIMIZATION
         const oldStatus = editingProduct.status;
         const newStatus = computeStatus(productData.quantity || 0);
         const statusChanged = oldStatus !== newStatus;
@@ -1304,18 +270,16 @@ export function StockPage() {
         });
         showToast("Product updated successfully", "success");
         
-        // Only fetch stats if status changed - OPTIMIZATION
         if (statusChanged) {
           fetchStats();
         }
       } else {
-        // Adding new product - always fetch stats
         await createProduct({
           ...productData,
           status: computeStatus(productData.quantity || 0),
         });
         showToast("Product added successfully", "success");
-        fetchStats(); // ADD THIS - Refresh stats after add
+        fetchStats();
       }
       fetchProducts();
     } catch (error) {
@@ -1341,7 +305,6 @@ export function StockPage() {
       }
       
       if (result.failed > 0) {
-        // Show detailed errors in console or could show in a modal
         console.error('Batch upload errors:', result.errors);
         if (result.created === 0) {
           showToast(`Failed to upload: ${result.errors[0]}`, "error");
@@ -1371,9 +334,15 @@ export function StockPage() {
     setIsDetailsModalOpen(true);
   };
 
+  const getDelayClass = (ms: number) => {
+    const validDelays = [0, 75, 100, 150, 200, 300, 500, 700, 1000];
+    if (validDelays.includes(ms)) return `delay-${ms}`;
+    return "delay-75";
+  };
+
   return (
     <div className="space-y-6">
-      <Toast {...toast} isDark={isDark} />
+      <Toast {...toast} />
 
       {/* Header */}
       <div
@@ -1393,33 +362,30 @@ export function StockPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         <StatCard
           title="Total Items"
-          value={stats.total} // CHANGED from stats.total
+          value={stats.total}
           subtitle="Total items in inventory"
           icon="📦"
           color="blue"
-          isDark={isDark}
           delay={100}
-          isLoading={isStatsLoading} // CHANGED to isStatsLoading
+          isLoading={isStatsLoading}
         />
         <StatCard
           title="In Stock Items"
-          value={stats.inStock} // CHANGED from stats.inStock
+          value={stats.inStock}
           subtitle="Items currently available"
           icon="✅"
           color="green"
-          isDark={isDark}
           delay={200}
-          isLoading={isStatsLoading} // CHANGED to isStatsLoading
+          isLoading={isStatsLoading}
         />
         <StatCard
           title="Out of Stock Items"
-          value={stats.outOfStock} // CHANGED from stats.outOfStock
+          value={stats.outOfStock}
           subtitle="Items currently unavailable"
           icon="❌"
           color="red"
-          isDark={isDark}
           delay={300}
-          isLoading={isStatsLoading} // CHANGED to isStatsLoading
+          isLoading={isStatsLoading}
         />
       </div>
 
@@ -1541,18 +507,18 @@ export function StockPage() {
               isDark ? "bg-blue-500/10 border-gray-800" : "bg-blue-50 border-gray-100"
             }`}
           >
-            <span className={`text-sm ${isDark ? "text-blue-400" : "text-blue-700"}`}>
+            <span className={`text-lg ${isDark ? "text-blue-400" : "text-blue-700"}`}>
               {selectedProducts.size} item(s) selected
             </span>
             <button
               onClick={handleBatchDelete}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors ${
+              className={`px-3 py-1.5 rounded-lg text-lg font-medium flex items-center gap-2 transition-colors ${
                 isDark
                   ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
                   : "bg-red-100 text-red-600 hover:bg-red-200"
               }`}
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
               Delete Selected
@@ -1571,7 +537,7 @@ export function StockPage() {
           </div>
         ) : (
           <>
-            {/* Table - Updated Columns: Name, Quantity, Price, Category, Status, Action */}
+            {/* Table */}
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead
@@ -1586,7 +552,7 @@ export function StockPage() {
                         type="checkbox"
                         checked={products.length > 0 && selectedProducts.size === products.length}
                         onChange={handleSelectAll}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="w-4.5 h-4.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
                     </th>
                     <th className="px-6 py-4 text-left text-base font-semibold">Item Name</th>
@@ -1611,7 +577,7 @@ export function StockPage() {
                           type="checkbox"
                           checked={selectedProducts.has(product.id)}
                           onChange={() => handleSelectProduct(product.id)}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         />
                       </td>
                       <td className={`px-6 py-4 text-lg font-medium ${isDark ? "text-white" : "text-gray-900"}`}>
@@ -1631,11 +597,10 @@ export function StockPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <StatusBadge status={product.status} isDark={isDark} />
+                        <StatusBadge status={product.status} />
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-
                           <button
                             onClick={() => openDetailsModal(product)}
                             className={`p-2 rounded-lg transition-colors ${
@@ -1676,7 +641,6 @@ export function StockPage() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                           </button>
-                          
                         </div>
                       </td>
                     </tr>
@@ -1704,7 +668,6 @@ export function StockPage() {
                 currentPage={currentPage}
                 totalPages={totalPages}
                 onPageChange={handlePageChange}
-                isDark={isDark}
               />
             )}
           </>
@@ -1720,7 +683,6 @@ export function StockPage() {
         }}
         onSave={handleSaveProduct}
         product={editingProduct}
-        isDark={isDark}
         isLoading={isActionLoading}
       />
 
@@ -1731,7 +693,6 @@ export function StockPage() {
           setViewingProduct(null);
         }}
         product={viewingProduct}
-        isDark={isDark}
       />
 
       <ConfirmationModal
@@ -1743,7 +704,6 @@ export function StockPage() {
         confirmText={confirmModal.confirmText}
         cancelText={confirmModal.cancelText}
         type={confirmModal.type}
-        isDark={isDark}
         isLoading={isActionLoading}
       />
 
@@ -1751,7 +711,6 @@ export function StockPage() {
         isOpen={isBatchUploadModalOpen}
         onClose={() => setIsBatchUploadModalOpen(false)}
         onUpload={handleBatchUpload}
-        isDark={isDark}
         isLoading={isActionLoading}
       />
 
