@@ -11,7 +11,7 @@ import {
   batchUploadProducts,
   type BatchUploadResult,
   type PaginatedResponse,
-} from "../services/api";
+} from "../services/warehouse.inventory.api";
 
 // Status badge component
 const StatusBadge = ({ status, isDark }: { status: ProductStatus; isDark: boolean }) => {

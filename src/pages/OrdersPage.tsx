@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 import type { Order, OrderStatus } from "../config/types";
-import { getOrders, updateOrderStatus, acceptOrder, rejectOrder, cancelOrder } from "../services/api";
+import { getOrders, updateOrderStatus, acceptOrder, rejectOrder, cancelOrder } from "../services/warehouse.inventory.api";
 
 // Status badge component for orders - Updated to match StockPage style
 const OrderStatusBadge = ({ status, isDark }: { status: OrderStatus; isDark: boolean }) => {

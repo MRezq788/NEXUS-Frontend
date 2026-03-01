@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 import type { Order, Product } from "../config/types";
-import { getOrderById, getProductById } from "../services/api";
+import { getOrderById, getProductById } from "../services/warehouse.inventory.api";
 
 // Product Card in Grid - Compact square/rectangle design
 const OrderProductCard = ({
