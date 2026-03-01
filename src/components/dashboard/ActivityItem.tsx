@@ -53,7 +53,7 @@ export const ActivityItem = ({
 
   return (
     <div
-      className={`relative flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 cursor-pointer border ${style.bg} ${style.border} ${
+      className={`relative h-12 flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 cursor-pointer border ${style.bg} ${style.border} ${
         isVisible ? "opacity-100" : "opacity-0"
       }`}
       onMouseEnter={() => setIsHovered(true)}
@@ -64,9 +64,11 @@ export const ActivityItem = ({
       }}
     >
       <div
-        className={`relative w-12 h-12 rounded-xl flex items-center justify-center ${style.iconBg} transition-all duration-300`}
+        className={`relative w-8 h-8 rounded-xl flex items-center justify-center ${style.iconBg} transition-all duration-300`}
         style={{
-          transform: isHovered ? "scale(1.1) rotate(5deg)" : "scale(1) rotate(0)",
+          transform: isHovered
+            ? "scale(1.1) rotate(5deg)"
+            : "scale(1) rotate(0)",
         }}
       >
         <div
@@ -103,12 +105,12 @@ export const ActivityItem = ({
           variant === "success"
             ? "bg-emerald-500"
             : variant === "warning"
-            ? "bg-amber-500"
-            : variant === "error"
-            ? "bg-red-500"
-            : isDark
-            ? "bg-gray-600"
-            : "bg-gray-400"
+              ? "bg-amber-500"
+              : variant === "error"
+                ? "bg-red-500"
+                : isDark
+                  ? "bg-gray-600"
+                  : "bg-gray-400"
         }`}
       />
     </div>

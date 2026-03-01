@@ -1,141 +1,206 @@
 import { useEffect, useState } from "react";
 
-interface ChartPlaceholderProps {
-  isDark: boolean;
+export type TimePeriod = "week" | "month" | "year";
+
+export interface ChartData {
+  label: string;
+  value: number;
 }
 
-export const ChartPlaceholder = ({ isDark }: ChartPlaceholderProps) => {
-  const [isVisible, setIsVisible] = useState(false);
-  const [hoveredBar, setHoveredBar] = useState<number | null>(null);
+export interface ChartPlaceholderProps {
+  isDark: boolean;
+  data?: ChartData[];
+  period?: TimePeriod;
+  isLoading?: boolean;
+}
 
+const defaultWeeklyData: ChartData[] = [
+  { label: "Mon", value: 65 },
+  { label: "Tue", value: 45 },
+  { label: "Wed", value: 80 },
+  { label: "Thu", value: 55 },
+  { label: "Fri", value: 70 },
+  { label: "Sat", value: 60 },
+  { label: "Sun", value: 85 },
+];
+
+const defaultMonthlyData: ChartData[] = [
+  { label: "Week 1", value: 320 },
+  { label: "Week 2", value: 450 },
+  { label: "Week 3", value: 380 },
+  { label: "Week 4", value: 520 },
+];
+
+const defaultYearlyData: ChartData[] = [
+  { label: "Jan", value: 1200 },
+  { label: "Feb", value: 1450 },
+  { label: "Mar", value: 1100 },
+  { label: "Apr", value: 1600 },
+  { label: "May", value: 1800 },
+  { label: "Jun", value: 1650 },
+  { label: "Jul", value: 2100 },
+  { label: "Aug", value: 1950 },
+  { label: "Sep", value: 2300 },
+  { label: "Oct", value: 2050 },
+  { label: "Nov", value: 2500 },
+  { label: "Dec", value: 2800 },
+];
+
+const colorSchemes = {
+  week: [
+    { color: "from-blue-500 to-blue-600", glow: "#3b82f6" },
+    { color: "from-indigo-500 to-indigo-600", glow: "#6366f1" },
+    { color: "from-violet-500 to-violet-600", glow: "#8b5cf6" },
+    { color: "from-purple-500 to-purple-600", glow: "#a855f7" },
+    { color: "from-fuchsia-500 to-pink-600", glow: "#d946ef" },
+    { color: "from-rose-500 to-rose-600", glow: "#f43f5e" },
+    { color: "from-orange-500 to-amber-600", glow: "#f97316" },
+  ],
+  month: [
+    { color: "from-blue-500 to-cyan-500", glow: "#06b6d4" },
+    { color: "from-emerald-500 to-teal-500", glow: "#14b8a6" },
+    { color: "from-amber-500 to-yellow-500", glow: "#eab308" },
+    { color: "from-violet-500 to-purple-500", glow: "#a855f7" },
+  ],
+  year: [
+    { color: "from-blue-500 to-indigo-500", glow: "#6366f1" },
+    { color: "from-indigo-500 to-violet-500", glow: "#8b5cf6" },
+    { color: "from-violet-500 to-fuchsia-500", glow: "#d946ef" },
+    { color: "from-fuchsia-500 to-rose-500", glow: "#f43f5e" },
+    { color: "from-rose-500 to-orange-500", glow: "#f97316" },
+    { color: "from-orange-500 to-amber-500", glow: "#f59e0b" },
+    { color: "from-emerald-500 to-green-500", glow: "#22c55e" },
+    { color: "from-green-500 to-lime-500", glow: "#84cc16" },
+    { color: "from-cyan-500 to-sky-500", glow: "#0ea5e9" },
+    { color: "from-sky-500 to-blue-500", glow: "#3b82f6" },
+    { color: "from-purple-500 to-pink-500", glow: "#ec4899" },
+    { color: "from-pink-500 to-rose-500", glow: "#f43f5e" },
+  ],
+};
+
+export const ChartPlaceholder = ({
+  isDark,
+  data,
+  period = "week",
+  isLoading = false,
+}: ChartPlaceholderProps) => {
+  const [animKey, setAnimKey] = useState(0);
+  const [progress, setProgress] = useState<number[]>([]);
+
+  const chartData = data || (period === "week" ? defaultWeeklyData : period === "month" ? defaultMonthlyData : defaultYearlyData);
+  const colors = colorSchemes[period];
+
+  // Reset animation when period changes
   useEffect(() => {
-    setIsVisible(true);
-  }, []);
+    setProgress(new Array(chartData.length).fill(0));
+    
+    // Staggered animation for each bar
+    const timeouts: number[] = [];
+    chartData.forEach((_, i) => {
+      const delay = i * 100;
+      const duration = 800;
+      
+      const startTime = Date.now() + delay;
+      
+      const animate = () => {
+        const now = Date.now();
+        const elapsed = now - startTime;
+        const p = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(2, -10 * p);
+        
+        setProgress(prev => {
+          const newValues = [...prev];
+          newValues[i] = eased * chartData[i].value;
+          return newValues;
+        });
+        
+        if (p < 1) {
+          timeouts.push(window.requestAnimationFrame(animate));
+        }
+      };
+      
+      timeouts.push(window.requestAnimationFrame(animate));
+    });
 
-  const data = [
-    { label: "Mon", value: 65, color: "from-blue-500 to-blue-600" },
-    { label: "Tue", value: 45, color: "from-indigo-500 to-indigo-600" },
-    { label: "Wed", value: 80, color: "from-violet-500 to-violet-600" },
-    { label: "Thu", value: 55, color: "from-purple-500 to-purple-600" },
-    { label: "Fri", value: 70, color: "from-fuchsia-500 to-pink-600" },
-    { label: "Sat", value: 60, color: "from-rose-500 to-rose-600" },
-    { label: "Sun", value: 85, color: "from-orange-500 to-amber-600" },
-  ];
+    return () => {
+      timeouts.forEach(id => window.cancelAnimationFrame(id));
+    };
+  }, [period, animKey, chartData]);
+
+  // Re-animate on period change
+  useEffect(() => {
+    setAnimKey(k => k + 1);
+  }, [period]);
 
   return (
     <div
-      className={`relative h-56 rounded-2xl overflow-hidden ${
+      className={`relative h-56 rounded-2xl overflow-hidden transition-all duration-500 ${
         isDark ? "bg-[#18191b]" : "bg-gradient-to-br from-gray-50 to-gray-100"
       }`}
     >
+      {isLoading && (
+        <div className="absolute inset-0 z-20 bg-black/20 backdrop-blur-[1px] flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+        </div>
+      )}
+
       <div className="absolute inset-0">
         <div
-          className={`absolute inset-0 opacity-30 ${
+          className={`absolute inset-0 ${
             isDark
-              ? "bg-[radial-gradient(circle_at_50%_0%,rgba(99,102,241,0.15),transparent_50%)]"
-              : "bg-[radial-gradient(circle_at_50%_0%,rgba(99,102,241,0.1),transparent_50%)]"
+              ? "bg-[radial-gradient(ellipse_at_top,rgba(99,102,241,0.12),transparent_60%)]"
+              : "bg-[radial-gradient(ellipse_at_top,rgba(99,102,241,0.08),transparent_60%)]"
           }`}
         />
       </div>
 
-      <div className="relative h-full flex items-end justify-around px-6 pb-6 pt-8">
-        {data.map((item, i) => (
-          <div
-            key={i}
-            className="flex flex-col items-center gap-3 flex-1 max-w-[60px]"
-            onMouseEnter={() => setHoveredBar(i)}
-            onMouseLeave={() => setHoveredBar(null)}
-          >
-            <div className="relative w-full flex items-end justify-center h-36">
-              <div
-                className={`absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md text-xs font-semibold transition-all duration-200 ${
-                  isDark
-                    ? "bg-gray-800 text-white"
-                    : "bg-white text-gray-900 shadow-lg"
-                } ${hoveredBar === i ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}
-              >
-                {item.value}%
-              </div>
-
-              <div
-                className={`w-10 rounded-t-xl bg-gradient-to-t ${item.color} transition-all duration-700 cursor-pointer relative overflow-hidden`}
-                style={{
-                  height: isVisible ? `${item.value}%` : "0%",
-                  transitionDelay: `${i * 100}ms`,
-                  transform: hoveredBar === i ? "scaleX(1.15)" : "scaleX(1)",
-                }}
-              >
-                <div
-                  className={`absolute inset-0 bg-gradient-to-b from-white/30 via-transparent to-transparent opacity-0 ${
-                    hoveredBar === i ? "opacity-100" : ""
-                  } transition-opacity duration-300`}
-                />
-                <div
-                  className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/20 to-transparent"
-                  style={{
-                    opacity: hoveredBar === i ? 0.5 : 0.2,
-                  }}
-                />
-
-                {hoveredBar === i && (
-                  <div className="absolute inset-0 bg-white/20 animate-pulse" />
-                )}
-              </div>
-            </div>
-
-            <span
-              className={`text-xs font-medium ${
-                isDark ? "text-gray-500" : "text-gray-500"
-              } ${hoveredBar === i ? (isDark ? "text-white" : "text-gray-900") : ""} transition-colors duration-200`}
+      <div className="relative h-full flex items-end justify-around px-2 pb-4 pt-10">
+        {chartData.map((item, i) => {
+          const maxValue = Math.max(...chartData.map(d => d.value), 1);
+          const heightPercent = item.value === 0 
+            ? 2 
+            : Math.min(((progress[i] || 0) / maxValue) * 85, 90);
+          
+          // Adjust bar width based on data length
+          const barWidth = chartData.length > 12 ? "w-2" : chartData.length > 7 ? "w-4 sm:w-5" : "w-5 sm:w-7";
+          const containerMaxWidth = chartData.length > 12 ? "max-w-[20px]" : chartData.length > 7 ? "max-w-[35px]" : "max-w-[40px]";
+          
+          return (
+            <div
+              key={i}
+              className={`flex flex-col items-center gap-1 flex-1 ${containerMaxWidth} group cursor-pointer`}
             >
-              {item.label}
-            </span>
-          </div>
-        ))}
-      </div>
+              <div className="relative w-full flex items-end justify-center h-36">
+                <div
+                  className={`absolute -top-6 left-1/2 -translate-x-1/2 px-1 py-0.5 rounded text-[8px] font-bold transition-all duration-200 ${
+                    isDark ? "bg-gray-800 text-white" : "bg-white text-gray-900 shadow-md"
+                  } opacity-0 group-hover:opacity-100 group-hover:translate-y-0 -translate-y-1`}
+                >
+                  {Math.round(progress[i] || 0)}
+                </div>
 
-      <div className="absolute top-4 left-4 flex items-center gap-2">
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-full bg-gradient-to-br from-blue-500 to-blue-600" />
-          <span
-            className={`text-xs font-medium ${isDark ? "text-gray-500" : "text-gray-500"}`}
-          >
-            This Week
-          </span>
-        </div>
-      </div>
+                <div
+                  className={`${barWidth} rounded-t-lg relative overflow-hidden transition-all duration-300 group-hover:scale-110`}
+                  style={{
+                    height: `${Math.max(heightPercent, 2)}%`,
+                  }}
+                >
+                  <div className={`absolute inset-0 bg-gradient-to-t ${colors[i % colors.length].color}`} />
+                  <div className="absolute inset-x-0 top-0 h-4 bg-gradient-to-b from-white/40 to-transparent opacity-50" />
+                  <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/25 to-transparent" />
+                </div>
+              </div>
 
-      <div className="absolute top-4 right-4 flex gap-2">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors cursor-pointer">
-          <svg
-            className={`w-4 h-4 ${isDark ? "text-gray-500" : "text-gray-400"}`}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-        </div>
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors cursor-pointer">
-          <svg
-            className={`w-4 h-4 ${isDark ? "text-gray-500" : "text-gray-400"}`}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
-        </div>
+              <span
+                className={`text-[6px] sm:text-[8px] font-semibold uppercase tracking-wider truncate w-full text-center transition-all duration-200 ${
+                  isDark ? "text-gray-500 group-hover:text-gray-300" : "text-gray-500 group-hover:text-gray-900"
+                }`}
+              >
+                {item.label}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

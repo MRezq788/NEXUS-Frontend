@@ -4,13 +4,13 @@ interface IconComponentProps {
 }
 
 export const IconComponent = ({ name, isDark }: IconComponentProps) => {
-  const color = isDark ? "#9ca3af" : "#6b7280";
+  const color = isDark ? "#000000" : "#000000";
   const activeColor = isDark ? "#60a5fa" : "#3b82f6";
 
   const icons: Record<string, React.ReactElement> = {
     box: (
       <svg
-        className="w-6 h-6"
+        className="w-5 h-5"
         fill="none"
         viewBox="0 0 24 24"
         stroke={color}
@@ -25,7 +25,7 @@ export const IconComponent = ({ name, isDark }: IconComponentProps) => {
     ),
     inbound: (
       <svg
-        className="w-6 h-6"
+        className="w-5 h-5"
         fill="none"
         viewBox="0 0 24 24"
         stroke={color}
@@ -36,7 +36,7 @@ export const IconComponent = ({ name, isDark }: IconComponentProps) => {
     ),
     outbound: (
       <svg
-        className="w-6 h-6"
+        className="w-5 h-5"
         fill="none"
         viewBox="0 0 24 24"
         stroke={color}
@@ -51,7 +51,7 @@ export const IconComponent = ({ name, isDark }: IconComponentProps) => {
     ),
     warning: (
       <svg
-        className="w-6 h-6"
+        className="w-5 h-5"
         fill="none"
         viewBox="0 0 24 24"
         stroke="#ef4444"
@@ -66,10 +66,10 @@ export const IconComponent = ({ name, isDark }: IconComponentProps) => {
     ),
     money: (
       <svg
-        className="w-6 h-6"
+        className="w-5 h-5"
         fill="none"
         viewBox="0 0 24 24"
-        stroke={activeColor}
+        stroke={color}
         strokeWidth={2}
       >
         <path
@@ -81,7 +81,7 @@ export const IconComponent = ({ name, isDark }: IconComponentProps) => {
     ),
     orders: (
       <svg
-        className="w-6 h-6"
+        className="w-5 h-5"
         fill="none"
         viewBox="0 0 24 24"
         stroke={color}
@@ -96,7 +96,7 @@ export const IconComponent = ({ name, isDark }: IconComponentProps) => {
     ),
     users: (
       <svg
-        className="w-6 h-6"
+        className="w-5 h-5"
         fill="none"
         viewBox="0 0 24 24"
         stroke={color}
@@ -111,7 +111,7 @@ export const IconComponent = ({ name, isDark }: IconComponentProps) => {
     ),
     pending: (
       <svg
-        className="w-6 h-6"
+        className="w-5 h-5"
         fill="none"
         viewBox="0 0 24 24"
         stroke={color}
@@ -174,7 +174,7 @@ export const IconComponent = ({ name, isDark }: IconComponentProps) => {
   return (
     icons[name] || (
       <svg
-        className="w-6 h-6"
+        className="w-5 h-5"
         fill="none"
         viewBox="0 0 24 24"
         stroke={color}

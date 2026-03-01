@@ -1,14 +1,251 @@
+import { useState, useEffect, useCallback } from "react";
 import { StatCard } from "./StatCard";
-import { ActivityItem } from "./ActivityItem";
 import { ChartPlaceholder } from "./ChartPlaceholder";
+import { usersApi } from "../../api";
+import type { Product, Cashier } from "../../api";
+import type { TimePeriod, ChartData } from "./ChartPlaceholder";
+import ListView from "./ListView";
 
 interface BusinessOwnerDashboardProps {
   isDark: boolean;
 }
 
+interface ActivityData {
+  title: string;
+  time: string;
+  icon: string;
+  variant: "default" | "success" | "warning" | "error";
+}
+
 export const BusinessOwnerDashboard = ({
   isDark,
 }: BusinessOwnerDashboardProps) => {
+  const [chartPeriod, setChartPeriod] = useState<TimePeriod>("week");
+  const [chartData, setChartData] = useState<ChartData[]>();
+  const [isLoading, setIsLoading] = useState(false);
+  const [userId, setUserId] = useState<string>("");
+  const [topProducts, setTopProducts] = useState<ActivityData[]>([]);
+  const [topCashiers, setTopCashiers] = useState<ActivityData[]>([]);
+  const [totalSold, setTotalSold] = useState<number>(0);
+  const [totalBought, setTotalBought] = useState<number>(0);
+  const [periodTotal, setPeriodTotal] = useState<number>(0);
+  const [growth, setGrowth] = useState<number>(0);
+  const [orderCount, setOrderCount] = useState<number>(0);
+  const [recentOrders, setRecentOrders] = useState<ActivityData[]>([]);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { getAuth } = await import("firebase/auth");
+      const { initializeApp } = await import("firebase/app");
+
+      const firebaseConfig = {
+        apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+        authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+        projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+        storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+        messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+        appId: import.meta.env.VITE_FIREBASE_APP_ID,
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const user = auth.currentUser;
+
+      if (user) {
+        setUserId(user.email || "");
+      }
+    };
+
+    getUser();
+  }, []);
+
+  const fetchRevenueData = useCallback(
+    async (period: TimePeriod) => {
+      if (!userId) return;
+
+      try {
+        setIsLoading(true);
+        const response = await usersApi.getRevenue(userId, period);
+        console.log(response);
+
+        if (response.success && response.data?.data) {
+          setChartData(response.data.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch revenue:", error);
+        setChartData(undefined);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [userId],
+  );
+
+  const fetchTopProducts = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      const response = await usersApi.getMostSoldProducts(userId, 5);
+      console.log(response);
+
+      if (response.success && response.data?.mostSoldProducts) {
+        const products: any[] = response.data.mostSoldProducts.map(
+          (product: Product, index: number) => ({
+            title: product.name,
+            icon: "box",
+            variant: index === 0 ? "success" : "default",
+          }),
+        );
+        setTopProducts(products);
+      }
+    } catch (error) {
+      console.error("Failed to fetch top products:", error);
+    }
+  }, [userId]);
+
+  const fetchTopCashiers = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      const response = await usersApi.getMostSellingCashiers(userId, 5);
+      console.log(response);
+
+      if (response.success && response.data?.topCashiers) {
+        const cashiers: any[] = response.data.topCashiers.map(
+          (cashier: any, index: number) => ({
+            title: cashier.name,
+            time: `${cashier.email} - ${cashier.totalSold} EGP`,
+            icon: "money",
+            variant: index === 0 ? "success" : "default",
+          }),
+        );
+        setTopCashiers(cashiers);
+      }
+    } catch (error) {
+      console.error("Failed to fetch top cashiers:", error);
+    }
+  }, [userId]);
+
+  const fetchSoldTotal = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      const response = await usersApi.getSoldTotal(userId);
+      console.log(response);
+
+      if (response.success && response.data?.totalSold !== undefined) {
+        setTotalSold(response.data.totalSold);
+      }
+    } catch (error) {
+      console.error("Failed to fetch sold total:", error);
+    }
+  }, [userId]);
+
+  const fetchBoughtTotal = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      const response = await usersApi.getBoughtTotal(userId);
+      console.log(response);
+
+      if (response.success && response.data?.totalBought !== undefined) {
+        setTotalBought(response.data.totalBought);
+      }
+    } catch (error) {
+      console.error("Failed to fetch bought total:", error);
+    }
+  }, [userId]);
+
+  const fetchPeriodStats = useCallback(
+    async (period: TimePeriod) => {
+      if (!userId) return;
+
+      try {
+        const [revenueResponse, growthResponse, ordersResponse] =
+          await Promise.all([
+            usersApi.getTotalRevenuePeriod(userId, period),
+            usersApi.getRevenueGrowth(userId, period),
+            usersApi.getTotalOrdersPeriod(userId, period),
+          ]);
+        console.log(revenueResponse, growthResponse, ordersResponse);
+
+        if (
+          revenueResponse.success &&
+          revenueResponse.data?.totalRevenue !== undefined
+        ) {
+          setPeriodTotal(revenueResponse.data.totalRevenue);
+        }
+
+        if (
+          growthResponse.success &&
+          growthResponse.data?.growth?.growth !== undefined
+        ) {
+          setGrowth(Math.round(growthResponse.data.growth.growth));
+        }
+
+        if (
+          ordersResponse.success &&
+          ordersResponse.data?.totalOrders !== undefined
+        ) {
+          setOrderCount(ordersResponse.data.totalOrders);
+        }
+      } catch (error) {
+        console.error("Failed to fetch period stats:", error);
+      }
+    },
+    [userId],
+  );
+
+  const fetchRecentOrders = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      const response = await usersApi.getRecentOrders(userId, 4);
+      console.log(response);
+
+      if (response.success && response.data?.recentOrders) {
+        const orders: ActivityData[] = response.data.recentOrders.map(
+          (order) => ({
+            title: `Order #${order.id.slice(0, 8)}`,
+            time: `${order.total} EGP - ${order.type === "sold" ? "Sold" : "Bought"}`,
+            icon: order.type === "sold" ? "money" : "orders",
+            variant: order.type === "sold" ? "success" : ("warning" as const),
+          }),
+        );
+        setRecentOrders(orders);
+      }
+    } catch (error) {
+      console.error("Failed to fetch recent orders:", error);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    if (userId) {
+      fetchRevenueData(chartPeriod);
+      fetchTopProducts();
+      fetchTopCashiers();
+      fetchSoldTotal();
+      fetchBoughtTotal();
+      fetchPeriodStats(chartPeriod);
+      fetchRecentOrders();
+    }
+  }, [
+    chartPeriod,
+    userId,
+    fetchRevenueData,
+    fetchTopProducts,
+    fetchTopCashiers,
+    fetchSoldTotal,
+    fetchBoughtTotal,
+    fetchPeriodStats,
+    fetchRecentOrders,
+  ]);
+
+  const handlePeriodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const period = e.target.value as TimePeriod;
+    setChartPeriod(period);
+  };
+
   const activities = [
     {
       title: "New order #8921 placed",
@@ -41,10 +278,10 @@ export const BusinessOwnerDashboard = ({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <StatCard
           title="Total Revenue"
-          value="$45,230"
+          value={`$${totalSold.toLocaleString()}`}
           icon="money"
-          trend="+15.3% this month"
-          trendValue={15.3}
+          trend="Total sales"
+          trendValue={0}
           isDark={isDark}
           delay={100}
           width="full"
@@ -53,10 +290,10 @@ export const BusinessOwnerDashboard = ({
         />
         <StatCard
           title="Total Expenses"
-          value="$12,450"
+          value={`$${totalBought.toLocaleString()}`}
           icon="orders"
-          trend="+8.2% this week"
-          trendValue={8.2}
+          trend="Total purchases"
+          trendValue={0}
           isDark={isDark}
           delay={200}
           width="full"
@@ -67,7 +304,7 @@ export const BusinessOwnerDashboard = ({
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div
-          className={`lg:col-span-2 p-6 rounded-3xl h-fit transition-all duration-300 ${
+          className={`lg:col-span-2 p-6 rounded-3xl h-[29rem] transition-all duration-300 ${
             isDark
               ? "bg-[#1e1f23] border border-[#2d2e33] shadow-xl shadow-black/20"
               : "bg-white border border-gray-100 shadow-xl shadow-gray-200/50"
@@ -88,15 +325,17 @@ export const BusinessOwnerDashboard = ({
             </div>
             <div className="flex items-center gap-3">
               <select
+                value={chartPeriod}
+                onChange={handlePeriodChange}
                 className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                   isDark
                     ? "bg-[#25262b] text-gray-300 border border-[#373a40] hover:border-gray-600"
                     : "bg-gray-100 text-gray-700 border border-gray-200 hover:border-gray-300"
                 } cursor-pointer`}
               >
-                <option>This Week</option>
-                <option>This Month</option>
-                <option>This Year</option>
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+                <option value="year">This Year</option>
               </select>
               <button
                 className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
@@ -109,26 +348,37 @@ export const BusinessOwnerDashboard = ({
               </button>
             </div>
           </div>
-          <ChartPlaceholder isDark={isDark} />
+          <ChartPlaceholder
+            isDark={isDark}
+            period={chartPeriod}
+            data={chartData}
+            isLoading={isLoading}
+          />
 
           <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
             <div className="text-center">
               <p
                 className={`text-2xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
               >
-                $45.2K
+                ${(periodTotal / 1000).toFixed(1)}K
               </p>
               <p
                 className={`text-sm ${isDark ? "text-gray-500" : "text-gray-500"}`}
               >
-                This Month
+                This{" "}
+                {chartPeriod === "week"
+                  ? "Week"
+                  : chartPeriod === "month"
+                    ? "Month"
+                    : "Year"}
               </p>
             </div>
             <div className="text-center border-l border-gray-200 dark:border-gray-700">
               <p
                 className={`text-2xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
               >
-                +23%
+                {growth > 0 ? "+" : ""}
+                {growth}%
               </p>
               <p
                 className={`text-sm ${isDark ? "text-gray-500" : "text-gray-500"}`}
@@ -140,7 +390,7 @@ export const BusinessOwnerDashboard = ({
               <p
                 className={`text-2xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
               >
-                142
+                {orderCount > 0 ? orderCount : "-"}
               </p>
               <p
                 className={`text-sm ${isDark ? "text-gray-500" : "text-gray-500"}`}
@@ -150,82 +400,73 @@ export const BusinessOwnerDashboard = ({
             </div>
           </div>
         </div>
-
-        <div
-          className={`p-6 rounded-3xl transition-all duration-300 ${
-            isDark
-              ? "bg-[#1e1f23] border border-[#2d2e33] shadow-xl shadow-black/20"
-              : "bg-white border border-gray-100 shadow-xl shadow-gray-200/50"
-          }`}
-        >
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3
-                className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
-              >
-                Recent Activity
-              </h3>
-              <p
-                className={`text-sm mt-1 ${isDark ? "text-gray-500" : "text-gray-500"}`}
-              >
-                Latest business updates
-              </p>
-            </div>
-            <button
-              className={`text-sm font-medium ${
-                isDark
-                  ? "text-blue-400 hover:text-blue-300"
-                  : "text-blue-600 hover:text-blue-500"
-              } transition-colors`}
-            >
-              View All
-            </button>
-          </div>
-          <div className="space-y-3">
-            {activities.map((activity, i) => (
-              <ActivityItem
-                key={i}
-                {...activity}
-                isDark={isDark}
-                delay={500 + i * 100}
-              />
-            ))}
-          </div>
-
-          <div
-            className={`mt-6 p-4 rounded-2xl ${isDark ? "bg-[#25262b]" : "bg-gray-50"}`}
-          >
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-                <svg
-                  className="w-5 h-5 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-                  />
-                </svg>
-              </div>
-              <div>
-                <p
-                  className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
-                >
-                  Business Growing
-                </p>
-                <p
-                  className={`text-xs ${isDark ? "text-gray-500" : "text-gray-500"}`}
-                >
-                  23% more than last month
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <ListView
+          isDark={isDark}
+          activities={
+            recentOrders.length > 0
+              ? recentOrders
+              : [
+                  {
+                    title: "Loading...",
+                    time: "",
+                    icon: "orders",
+                    variant: "default" as const,
+                  },
+                ]
+          }
+          title="Recent Orders"
+          subtitle="Your latest 5 orders"
+          height="h-[29rem]"
+          showGrowing
+        />
+      </div>
+      <div className="flex items-stretch gap-4 w-full h-[32rem]">
+        <ListView
+          isDark={isDark}
+          activities={
+            topProducts.length > 0
+              ? topProducts
+              : [
+                  {
+                    title: "Loading...",
+                    time: "",
+                    icon: "box",
+                    variant: "default" as const,
+                  },
+                ]
+          }
+          title="Top Selling Products"
+          subtitle="Most popular items in your store"
+          width="w-1/3"
+          height="h-[85%]"
+        />
+        <ListView
+          isDark={isDark}
+          activities={
+            topCashiers.length > 0
+              ? topCashiers
+              : [
+                  {
+                    title: "Loading...",
+                    time: "",
+                    icon: "money",
+                    variant: "default" as const,
+                  },
+                ]
+          }
+          title="Top Selling Cashiers"
+          subtitle="Best performing staff members"
+          width="w-1/3"
+          height="h-[85%]"
+        />
+        <ListView
+          isDark={isDark}
+          activities={activities}
+          title="Top Selling websites"
+          subtitle="Websites with highest sales"
+          width="w-1/3"
+          height="h-[85%]"
+        />
       </div>
     </div>
   );

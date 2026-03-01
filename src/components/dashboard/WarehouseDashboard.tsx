@@ -1,124 +1,236 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { StatCard } from "./StatCard";
-import { ActivityItem } from "./ActivityItem";
 import { ChartPlaceholder } from "./ChartPlaceholder";
+import { usersApi } from "../../api";
+import type { TimePeriod, ChartData } from "./ChartPlaceholder";
+import ListView from "./ListView";
 
 interface WarehouseDashboardProps {
   isDark: boolean;
 }
 
+interface ActivityData {
+  title: string;
+  time: string;
+  icon: string;
+  variant: "default" | "success" | "warning" | "error";
+}
+
 export const WarehouseDashboard = ({ isDark }: WarehouseDashboardProps) => {
-  const [isVisible, setIsVisible] = useState(false);
+  const [chartPeriod, setChartPeriod] = useState<TimePeriod>("week");
+  const [chartData, setChartData] = useState<ChartData[]>();
+  const [isLoading, setIsLoading] = useState(false);
+  const [userId, setUserId] = useState<string>("");
+  const [totalSold, setTotalSold] = useState<number>(0);
+  const [totalBought, setTotalBought] = useState<number>(0);
+  const [periodTotal, setPeriodTotal] = useState<number>(0);
+  const [growth, setGrowth] = useState<number>(0);
+  const [orderCount, setOrderCount] = useState<number>(0);
+  const [recentOrders, setRecentOrders] = useState<ActivityData[]>([]);
 
   useEffect(() => {
-    setIsVisible(true);
+    const getUser = async () => {
+      const { getAuth } = await import("firebase/auth");
+      const { initializeApp } = await import("firebase/app");
+
+      const firebaseConfig = {
+        apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+        authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+        projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+        storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+        messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+        appId: import.meta.env.VITE_FIREBASE_APP_ID,
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const user = auth.currentUser;
+
+      if (user) {
+        setUserId(user.email || "");
+      }
+    };
+
+    getUser();
   }, []);
 
-  const activities = [
-    {
-      title: "Inbound shipment #1234 received",
-      time: "2 minutes ago",
-      icon: "inbound",
-      variant: "success" as const,
+  const fetchRevenueData = useCallback(
+    async (period: TimePeriod) => {
+      if (!userId) return;
+
+      try {
+        setIsLoading(true);
+        const response = await usersApi.getRevenue(userId, period);
+
+        if (response.success && response.data?.data) {
+          setChartData(response.data.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch revenue:", error);
+        setChartData(undefined);
+      } finally {
+        setIsLoading(false);
+      }
     },
-    {
-      title: "Outbound order #5678 dispatched",
-      time: "15 minutes ago",
-      icon: "truck",
-      variant: "success" as const,
+    [userId],
+  );
+
+  const fetchSoldTotal = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      const response = await usersApi.getSoldTotal(userId);
+
+      if (response.success && response.data?.totalSold !== undefined) {
+        setTotalSold(response.data.totalSold);
+      }
+    } catch (error) {
+      console.error("Failed to fetch sold total:", error);
+    }
+  }, [userId]);
+
+  const fetchBoughtTotal = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      const response = await usersApi.getBoughtTotal(userId);
+
+      if (response.success && response.data?.totalBought !== undefined) {
+        setTotalBought(response.data.totalBought);
+      }
+    } catch (error) {
+      console.error("Failed to fetch bought total:", error);
+    }
+  }, [userId]);
+
+  const fetchPeriodStats = useCallback(
+    async (period: TimePeriod) => {
+      if (!userId) return;
+
+      try {
+        const [revenueResponse, growthResponse, ordersResponse] =
+          await Promise.all([
+            usersApi.getTotalRevenuePeriod(userId, period),
+            usersApi.getRevenueGrowth(userId, period),
+            usersApi.getTotalOrdersPeriod(userId, period),
+          ]);
+
+        if (
+          revenueResponse.success &&
+          revenueResponse.data?.totalRevenue !== undefined
+        ) {
+          setPeriodTotal(revenueResponse.data.totalRevenue);
+        }
+
+        if (
+          growthResponse.success &&
+          growthResponse.data?.growth?.growth !== undefined
+        ) {
+          setGrowth(Math.round(growthResponse.data.growth.growth));
+        }
+
+        if (
+          ordersResponse.success &&
+          ordersResponse.data?.totalOrders !== undefined
+        ) {
+          setOrderCount(ordersResponse.data.totalOrders);
+        }
+      } catch (error) {
+        console.error("Failed to fetch period stats:", error);
+      }
     },
-    {
-      title: "Stock count updated for SKU-001",
-      time: "1 hour ago",
-      icon: "chart",
-    },
-    { title: "Low stock alert: SKU-045", time: "2 hours ago", icon: "warning", variant: "warning" as const },
-  ];
+    [userId],
+  );
+
+  const fetchRecentOrders = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      const response = await usersApi.getRecentOrders(userId, 4);
+
+      if (response.success && response.data?.recentOrders) {
+        const orders: ActivityData[] = response.data.recentOrders.map(
+          (order) => ({
+            title: `Order #${order.id.slice(0, 8)}`,
+            time: `${order.total} EGP - ${order.type === "sold" ? "Sold" : "Bought"}`,
+            icon: order.type === "sold" ? "money" : "orders",
+            variant: order.type === "sold" ? "success" : ("warning" as const),
+          }),
+        );
+        setRecentOrders(orders);
+      }
+    } catch (error) {
+      console.error("Failed to fetch recent orders:", error);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    if (userId) {
+      fetchRevenueData(chartPeriod);
+      fetchSoldTotal();
+      fetchBoughtTotal();
+      fetchPeriodStats(chartPeriod);
+      fetchRecentOrders();
+    }
+  }, [
+    chartPeriod,
+    userId,
+    fetchRevenueData,
+    fetchSoldTotal,
+    fetchBoughtTotal,
+    fetchPeriodStats,
+    fetchRecentOrders,
+  ]);
+
+  const handlePeriodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const period = e.target.value as TimePeriod;
+    setChartPeriod(period);
+  };
 
   return (
     <div className="space-y-8">
-      <div
-        className={`flex items-center justify-between ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"}`}
-        style={{ transition: "all 0.6s cubic-bezier(0.4, 0, 0.2, 1)" }}
-      >
-        <div>
-          <div className="flex items-center gap-3">
-            <h2
-              className={`text-3xl font-extrabold ${isDark ? "text-white" : "text-gray-900"}`}
-            >
-              Warehouse Dashboard
-            </h2>
-            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-500">
-              Live
-            </span>
-          </div>
-          <p className={`mt-2 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
-            Welcome back! Here&apos;s what&apos;s happening today.
-          </p>
-        </div>
-        <div
-          className={`px-5 py-3 rounded-2xl flex items-center gap-3 ${
-            isDark
-              ? "bg-gradient-to-r from-emerald-500/20 to-green-500/20 border border-emerald-500/30"
-              : "bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200"
-          }`}
-        >
-          <span className="relative flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-          </span>
-          <span className={`font-semibold ${isDark ? "text-emerald-400" : "text-emerald-600"}`}>
-            All Systems Operational
-          </span>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <StatCard
           title="Total Stock"
-          value="12,450"
+          value={`$${totalSold.toLocaleString()}`}
           icon="box"
-          trend="+12% from last week"
-          trendValue={12}
+          trend="Total stock value"
+          trendValue={0}
           isDark={isDark}
           delay={100}
+          width="full"
+          height="h-56"
           color="blue"
         />
         <StatCard
-          title="Pending Inbound"
-          value="28"
-          icon="inbound"
-          trend="+5 from yesterday"
-          trendValue={5}
+          title="Total Revenue"
+          value={`$${periodTotal.toLocaleString()}`}
+          icon="money"
+          trend={`This ${chartPeriod === "week" ? "Week" : chartPeriod === "month" ? "Month" : "Year"}`}
+          trendValue={0}
           isDark={isDark}
           delay={200}
+          width="full"
+          height="h-56"
           color="green"
         />
         <StatCard
-          title="Pending Outbound"
-          value="15"
-          icon="outbound"
-          trend="-3 from yesterday"
-          trendValue={-3}
-          isDark={isDark}
-          delay={300}
-          color="purple"
-        />
-        <StatCard
-          title="Low Stock Items"
-          value="7"
-          icon="warning"
-          trend="Needs attention"
+          title="Pending Orders"
+          value={`$${totalBought.toLocaleString()}`}
+          icon="orders"
+          trend="Pending orders value"
           trendValue={0}
           isDark={isDark}
-          delay={400}
-          color="red"
+          delay={300}
+          width="full"
+          height="h-56"
+          color="orange"
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div
-          className={`lg:col-span-2 p-6 rounded-3xl transition-all duration-300 ${
+          className={`lg:col-span-2 p-6 rounded-3xl h-[29rem] transition-all duration-300 ${
             isDark
               ? "bg-[#1e1f23] border border-[#2d2e33] shadow-xl shadow-black/20"
               : "bg-white border border-gray-100 shadow-xl shadow-gray-200/50"
@@ -129,63 +241,110 @@ export const WarehouseDashboard = ({ isDark }: WarehouseDashboardProps) => {
               <h3
                 className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
               >
-                Weekly Activity
+                Warehouse Overview
               </h3>
-              <p className={`text-sm mt-1 ${isDark ? "text-gray-500" : "text-gray-500"}`}>
-                Overview of warehouse operations
-              </p>
-            </div>
-            <select
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                isDark
-                  ? "bg-[#25262b] text-gray-300 border border-[#373a40] hover:border-gray-600"
-                  : "bg-gray-100 text-gray-700 border border-gray-200 hover:border-gray-300"
-              } cursor-pointer`}
-            >
-              <option>This Week</option>
-              <option>Last Week</option>
-              <option>This Month</option>
-            </select>
-          </div>
-          <ChartPlaceholder isDark={isDark} />
-        </div>
-        <div
-          className={`p-6 rounded-3xl transition-all duration-300 ${
-            isDark
-              ? "bg-[#1e1f23] border border-[#2d2e33] shadow-xl shadow-black/20"
-              : "bg-white border border-gray-100 shadow-xl shadow-gray-200/50"
-          }`}
-        >
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3
-                className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
+              <p
+                className={`text-sm mt-1 ${isDark ? "text-gray-500" : "text-gray-500"}`}
               >
-                Recent Activity
-              </h3>
-              <p className={`text-sm mt-1 ${isDark ? "text-gray-500" : "text-gray-500"}`}>
-                Latest warehouse updates
+                Track your warehouse performance
               </p>
             </div>
-            <button
-              className={`text-sm font-medium ${
-                isDark ? "text-blue-400 hover:text-blue-300" : "text-blue-600 hover:text-blue-500"
-              } transition-colors`}
-            >
-              View All
-            </button>
+            <div className="flex items-center gap-3">
+              <select
+                value={chartPeriod}
+                onChange={handlePeriodChange}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                  isDark
+                    ? "bg-[#25262b] text-gray-300 border border-[#373a40] hover:border-gray-600"
+                    : "bg-gray-100 text-gray-700 border border-gray-200 hover:border-gray-300"
+                } cursor-pointer`}
+              >
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+                <option value="year">This Year</option>
+              </select>
+              <button
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                  isDark
+                    ? "bg-blue-600 hover:bg-blue-500 text-white"
+                    : "bg-blue-600 hover:bg-blue-700 text-white"
+                }`}
+              >
+                Export
+              </button>
+            </div>
           </div>
-          <div className="space-y-3">
-            {activities.map((activity, i) => (
-              <ActivityItem
-                key={i}
-                {...activity}
-                isDark={isDark}
-                delay={500 + i * 100}
-              />
-            ))}
+          <ChartPlaceholder
+            isDark={isDark}
+            period={chartPeriod}
+            data={chartData}
+            isLoading={isLoading}
+          />
+
+          <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <div className="text-center">
+              <p
+                className={`text-2xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
+              >
+                ${(periodTotal / 1000).toFixed(1)}K
+              </p>
+              <p
+                className={`text-sm ${isDark ? "text-gray-500" : "text-gray-500"}`}
+              >
+                This{" "}
+                {chartPeriod === "week"
+                  ? "Week"
+                  : chartPeriod === "month"
+                    ? "Month"
+                    : "Year"}
+              </p>
+            </div>
+            <div className="text-center border-l border-gray-200 dark:border-gray-700">
+              <p
+                className={`text-2xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
+              >
+                {growth > 0 ? "+" : ""}
+                {growth}%
+              </p>
+              <p
+                className={`text-sm ${isDark ? "text-gray-500" : "text-gray-500"}`}
+              >
+                Growth
+              </p>
+            </div>
+            <div className="text-center border-l border-gray-200 dark:border-gray-700">
+              <p
+                className={`text-2xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
+              >
+                {orderCount > 0 ? orderCount : "-"}
+              </p>
+              <p
+                className={`text-sm ${isDark ? "text-gray-500" : "text-gray-500"}`}
+              >
+                Orders
+              </p>
+            </div>
           </div>
         </div>
+        <ListView
+          isDark={isDark}
+          activities={
+            recentOrders.length > 0
+              ? recentOrders
+              : [
+                  {
+                    title: "Loading...",
+                    time: "",
+                    icon: "orders",
+                    variant: "default" as const,
+                  },
+                ]
+          }
+          title="Recent Orders"
+          subtitle="Your latest 5 orders"
+          height="h-[29rem]"
+          showGrowing
+        />
       </div>
     </div>
   );
