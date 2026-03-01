@@ -31,6 +31,15 @@ const StatusBadge = ({ status, isDark }: { status: ProductStatus; isDark: boolea
   );
 };
 
+const getDelayClass = (ms: number) => {
+    // If your delay matches a standard Tailwind value, use it
+    const validDelays = [0, 75, 100, 150, 200, 300, 500, 700, 1000];
+      
+    // Find the closest valid delay (or just ensure your data matches these)
+    if (validDelays.includes(ms)) return `delay-${ms}`; 
+    return 'delay-75'; // Fallback
+  };
+
 // Stat Card Component
 const StatCard = ({
   title,
@@ -84,8 +93,7 @@ const StatCard = ({
         isDark
           ? "bg-[#18191b] border border-gray-800"
           : "bg-white border border-gray-100 shadow-lg shadow-gray-200/50"
-      } ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
-      style={{ transitionDelay: `${delay}ms` }}
+      } ${getDelayClass(delay)} ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
     >
       <div className="flex items-start justify-between">
         <div>
@@ -1135,7 +1143,7 @@ export function StockPage() {
         search: searchQuery || undefined,
         status: filterStatus,
       });
-
+      console.log("total products:", totalProducts);
       setProducts(response.products);
       setTotalProducts(response.total);
       setTotalPages(response.totalPages);
@@ -1593,10 +1601,9 @@ export function StockPage() {
                   {products.map((product, index) => (
                     <tr
                       key={product.id}
-                      className={`transition-colors ${
+                      className={`transition-colors ${getDelayClass(index * 50)} ${
                         isDark ? "hover:bg-gray-800/50" : "hover:bg-gray-50"
                       } ${selectedProducts.has(product.id) ? (isDark ? "bg-blue-500/10" : "bg-blue-50") : ""}`}
-                      style={{ animation: `fadeIn 0.3s ease-out ${index * 50}ms both` }}
                     >
                       <td className="px-6 py-4">
                         <input

@@ -41,15 +41,27 @@ const OrderProductCard = ({
     fetchProduct();
   }, [productId]);
 
+  const getDelayClass = (ms: number) => {
+    // If your delay matches a standard Tailwind value, use it
+    const validDelays = [0, 75, 100, 150, 200, 300, 500, 700, 1000];
+      
+    // Find the closest valid delay (or just ensure your data matches these)
+    if (validDelays.includes(ms)) return `delay-${ms}`; 
+    return 'delay-75'; // Fallback
+  };
   if (isLoading) {
     return (
       <div 
-        className={`p-4 rounded-xl ${isDark ? "bg-black/50" : "bg-gray-50"} animate-pulse h-32`}
-        style={{ 
-          opacity: isVisible ? 1 : 0,
-          transform: isVisible ? 'translateY(0)' : 'translateY(20px)',
-          transition: `all 0.3s ease-out ${delay}ms`
-        }}
+        className={`
+          p-4 rounded-xl h-32 
+          transition-all duration-300 ease-out  /* Move transition settings here */
+          ${getDelayClass(delay)}  {/* <--- Logic moved to className */}
+          ${isDark ? "bg-black/50" : "bg-gray-50"} 
+          ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-[20px]"} /* Move states here */
+        `}
+        // style={{ 
+        //   transitionDelay: `${delay}ms` /* Only the dynamic variable remains here */
+        // }}
       >
         <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
         <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/2"></div>
@@ -60,13 +72,25 @@ const OrderProductCard = ({
   if (!product) {
     return (
       <div 
-        className={`p-4 rounded-xl ${isDark ? "bg-red-500/10 border border-red-500/20" : "bg-red-50 border border-red-100"} h-32 flex items-center justify-center`}
-        style={{ 
-          opacity: isVisible ? 1 : 0,
-          transform: isVisible ? 'translateY(0)' : 'translateY(20px)',
-          transition: `all 0.3s ease-out ${delay}ms`
-        }}
+        className={`
+          p-4 rounded-xl h-32 flex items-center justify-center
+          transition-all duration-300 ease-out
+          ${getDelayClass(delay)}
+          ${isDark ? "bg-red-500/10 border border-red-500/20" : "bg-red-50 border border-red-100"}
+          ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"}
+        `}
       >
+        <div 
+          className={`
+            p-4 rounded-xl h-32 flex items-center justify-center
+            transition-all duration-300 ease-out
+            ${getDelayClass(delay)}
+            ${isDark ? "bg-red-500/10 border border-red-500/20" : "bg-red-50 border border-red-100"}
+            ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"}
+          `}
+        >
+          {/* Content goes here */}
+        </div>
         <p className={`text-sm ${isDark ? "text-red-400" : "text-red-600"} text-center`}>
           Product not found
         </p>
@@ -76,16 +100,16 @@ const OrderProductCard = ({
 
   return (
     <div
-      className={`relative p-4 rounded-xl transition-all duration-300 hover:scale-[1.02] cursor-pointer group ${
-        isDark
+      className={`
+        relative p-4 rounded-xl cursor-pointer group
+        transition-all duration-300 ease-out hover:scale-[1.02]
+        ${getDelayClass(delay)}
+        ${isDark
           ? "bg-[#1a1a1a] border border-gray-800 hover:border-gray-700"
           : "bg-white border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md"
-      }`}
-      style={{ 
-        opacity: isVisible ? 1 : 0,
-        transform: isVisible ? 'translateY(0)' : 'translateY(20px)',
-        transition: `all 0.3s ease-out ${delay}ms`
-      }}
+        }
+        ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"}
+      `}
       onClick={() => onViewProduct(productId)}
     >
       {/* Product Icon/Image */}

@@ -201,7 +201,14 @@ const AlertModal = ({
     </div>
   );
 };
-
+const getDelayClass = (ms: number) => {
+    // If your delay matches a standard Tailwind value, use it
+    const validDelays = [0, 75, 100, 150, 200, 300, 500, 700, 1000];
+      
+    // Find the closest valid delay (or just ensure your data matches these)
+    if (validDelays.includes(ms)) return `delay-${ms}`; 
+    return 'delay-75'; // Fallback
+  };
 // Order Card Component - Updated with action buttons
 const OrderCard = ({
   order,
@@ -235,12 +242,16 @@ const OrderCard = ({
 
   return (
     <div
-      className={`relative overflow-hidden p-6 rounded-2xl transition-all duration-500 hover:scale-[1.02] ${
-        isDark
+      className={`
+        relative overflow-hidden p-6 rounded-2xl 
+        transition-all duration-500 hover:scale-[1.02]
+        ${getDelayClass(delay)}
+        ${isDark
           ? "bg-[#18191b] border border-gray-800"
           : "bg-white border border-gray-100 shadow-lg shadow-gray-200/50"
-      } ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
-      style={{ transitionDelay: `${delay}ms` }}
+        } 
+        ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}
+      `}
     >
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
