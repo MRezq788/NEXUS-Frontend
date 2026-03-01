@@ -1,4 +1,3 @@
-// src/components/warehouse/StatusBadge.tsx
 import type { ProductStatus } from "../../config/types";
 import { useTheme } from "../../contexts/ThemeContext";
 

@@ -1,4 +1,3 @@
-// src/pages/WarehouseStockPage.tsx
 import { useState, useEffect, useCallback } from "react";
 import { useTheme } from "../contexts/ThemeContext";
 import type { Product, ProductStatus } from "../config/types";

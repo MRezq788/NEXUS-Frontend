@@ -1,4 +1,3 @@
-// src/components/warehouse/ConfirmationModal.tsx
 import { useTheme } from "../../contexts/ThemeContext";
 
 interface ConfirmationModalProps {

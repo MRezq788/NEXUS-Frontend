@@ -1,4 +1,3 @@
-// src/components/warehouse/ProductModal.tsx
 import { useState, useEffect } from "react";
 import { useTheme } from "../../contexts/ThemeContext";
 import type { Product, ProductStatus } from "../../config/types";

@@ -1,4 +1,3 @@
-// src/components/warehouse/Toast.tsx
 import { useTheme } from "../../contexts/ThemeContext";
 
 interface ToastProps {

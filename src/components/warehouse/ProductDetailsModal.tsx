@@ -1,4 +1,3 @@
-// src/components/warehouse/ProductDetailsModal.tsx
 import { useTheme } from "../../contexts/ThemeContext";
 import type { Product } from "../../config/types";
 import { StatusBadge } from "./StatusBadge";

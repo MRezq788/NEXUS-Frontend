@@ -1,4 +1,3 @@
-// src/components/warehouse/StatCard.tsx
 import { useState, useEffect } from "react";
 import { useTheme } from "../../contexts/ThemeContext";
 

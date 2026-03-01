@@ -1,4 +1,3 @@
-// src/components/warehouse/Pagination.tsx
 import { useTheme } from "../../contexts/ThemeContext";
 
 interface PaginationProps {

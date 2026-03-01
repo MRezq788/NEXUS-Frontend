@@ -1,4 +1,3 @@
-// src/components/warehouse/BatchUploadModal.tsx
 import { useState, useRef } from "react";
 import { useTheme } from "../../contexts/ThemeContext";
 import type { Product } from "../../config/types";
