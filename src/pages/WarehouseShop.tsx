@@ -99,7 +99,7 @@ export function WarehouseShop() {
         })),
       };
 
-      const res = await fetch(`${API_URL}/api/orders`, {
+      const res = await fetch(`${API_URL}/api/warehouse-shop/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
