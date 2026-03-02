@@ -7,6 +7,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   hasRole: (roles: UserRole[]) => boolean;
+  getAuthHeaders: () => Record<string, string>; // Add this
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -17,6 +18,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAuthenticated = user !== null;
 
   const login = useCallback(async (email: string, _password: string): Promise<boolean> => {
+    // Save email to localStorage for persistence
+    localStorage.setItem('userEmail', email);
+    
     if (email.includes('warehouse')) {
       setUser({
         id: '1',
@@ -39,6 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     setUser(null);
+    localStorage.removeItem('userEmail'); // Clear on logout
   }, []);
 
   const hasRole = useCallback((roles: UserRole[]): boolean => {
@@ -46,8 +51,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return roles.includes(user.role);
   }, [user]);
 
+  // Helper to get auth headers for API requests
+  const getAuthHeaders = useCallback((): Record<string, string> => {
+    const email = user?.email || localStorage.getItem('userEmail') || '';
+    return {
+      'Content-Type': 'application/json',
+      'X-User-Email': email, // Send email in header
+    };
+  }, [user]);
+
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, logout, hasRole }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, login, logout, hasRole, getAuthHeaders }}>
       {children}
     </AuthContext.Provider>
   );
