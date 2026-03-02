@@ -11,7 +11,7 @@ import type { User } from "firebase/auth"
 import { auth } from "../../../config/firbase" // Note: adjust spelling if you renamed 'firbase.ts' to 'firebase.ts'
 
 export type AuthView = "signIn" | "signUp" | "completeProfile" | "success"
-export type AccountType = "business_owner" | "warehouse" | "app_user" | ""
+export type AccountType = "business_owner" | "warehouse" | ""
 
 export function useAuthFlow() {
   // Navigation & View State

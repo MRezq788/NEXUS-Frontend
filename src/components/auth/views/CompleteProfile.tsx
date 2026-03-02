@@ -23,7 +23,6 @@ export function CompleteProfile(props: AuthLogic) {
           <option value="" disabled>Select your account type</option>
           <option value="business_owner">Business Owner</option>
           <option value="warehouse">Warehouse</option>
-          <option value="app_user">App User</option>
         </select>
       </fieldset>
 
