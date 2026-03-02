@@ -5,6 +5,7 @@ import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { initializeApp } from "firebase/app";
 import type { SidebarTab } from "../../config/types";
 import { sidebarTabs, warehouseTabs } from "../../config/sidebar";
+import Logo from "./Logo";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -106,20 +107,8 @@ export function Sidebar() {
         isDark ? "bg-[#18191b] border-[#18191b]" : "bg-white border-gray-200"
       } border-r transition-all duration-300`}
     >
-      <div className={`p-6 border-b h-20 ${isDark ? "border-[#18191b]" : "border-gray-100"}`}>
-        <div className="flex items-center gap-3">
-          <div
-            className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-              isDark ? "bg-gradient-to-br from-blue-500 to-purple-600" : "bg-gradient-to-br from-blue-500 to-blue-600"
-            }`}
-          >
-            <span className="text-white text-lg font-bold">N</span>
-          </div>
-          <div className="">
-            <h1 className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>Nexus</h1>
-            <p className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}>Management System</p>
-          </div>
-        </div>
+      <div className={``}>
+        <Logo />
       </div>
 
       <nav className="flex-1 p-4 overflow-y-auto">

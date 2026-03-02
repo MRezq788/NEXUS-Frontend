@@ -9,8 +9,8 @@ export function SignUpForm(props: AuthLogic) {
   return (
     <form onSubmit={props.handleEmailSignUp} className="flex flex-col gap-5">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground text-balance">Join Now for Success</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Create your account and start today</p>
+        <h1 className="text-3xl font-black tracking-tighter text-foreground text-balance italic">Join Nexus</h1>
+        <p className="mt-1 text-sm text-muted-foreground font-medium opacity-70">Create your account and start today</p>
       </div>
 
       <fieldset className="flex flex-col gap-1.5">

@@ -10,8 +10,8 @@ export function SignInForm(props: AuthLogic) {
   return (
     <form onSubmit={props.handleEmailSignIn} className="flex flex-col gap-5">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground text-balance">Welcome Back</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Sign in to your account</p>
+        <h1 className="text-3xl font-black tracking-tighter text-foreground text-balance italic">Welcome Back</h1>
+        <p className="mt-1 text-sm text-muted-foreground font-medium opacity-70">Sign in to your Nexus account</p>
       </div>
 
       {/* Auth Error Toast/Message */}
