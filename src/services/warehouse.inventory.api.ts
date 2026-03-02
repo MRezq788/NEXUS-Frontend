@@ -1,13 +1,18 @@
+import { getAuth } from "firebase/auth";
 import type { Order, OrderStatus, Product, ProductStatus } from "../config/types";
 
 const API_BASE_URL = "http://localhost:3000/api";
 
 // Helper to get auth headers from localStorage
 function getAuthHeaders(): Record<string, string> {
-  // const email = localStorage.getItem('userEmail') || '';
+  const auth = getAuth();
+  const user = auth.currentUser;
+  
+  const email = user?.email || "";
+
   return {
     "Content-Type": "application/json",
-    "X-User-Email": "warehouse1@nexus.com", // For development
+    "X-User-Email": email, // For development
     // "X-User-Email": email, // Send email with every request
   };
 }
