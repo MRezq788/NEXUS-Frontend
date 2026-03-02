@@ -40,7 +40,8 @@ interface ApiCountResponse {
 
 const API_URL = "http://localhost:3000/api/business-inventory";
 const PAGE_SIZE = 10;
-const EMAIL = localStorage.getItem('userEmail') || 'warehouse1@nexus.com'; // hardcoded for development
+// const EMAIL = localStorage.getItem('userEmail') || 'owener5@nexus.com'; // hardcoded for development
+const EMAIL = 'owner5@nexus.com'; // hardcoded for development
 
 // ─── Icon helpers ────────────────────────────────────────────────────────────
 
