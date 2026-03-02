@@ -73,13 +73,44 @@ const IconComponent = ({ name, isDark }: { name: string; isDark: boolean }) => {
   );
 };
 
-export function Sidebar() {
+interface SidebarProps {
+  isCollapsed: boolean;
+  onToggle: (collapsed: boolean) => void;
+}
+
+export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   const { isDark } = useTheme();
   const [role, setRole] = useState<string>("business_owner");
   const [isVisible, setIsVisible] = useState(false);
   const navigate = useNavigate();
 
   const tabs: SidebarTab[] = role === "warehouse" ? warehouseTabs : sidebarTabs;
+
+  useEffect(() => {
+    let lastWidth = window.innerWidth;
+    
+    const handleResize = () => {
+      const currentWidth = window.innerWidth;
+      const breakpoint = 1024;
+      
+      // Only auto-toggle when crossing the breakpoint
+      if (lastWidth >= breakpoint && currentWidth < breakpoint) {
+        onToggle(true);
+      } else if (lastWidth < breakpoint && currentWidth >= breakpoint) {
+        onToggle(false);
+      }
+      
+      lastWidth = currentWidth;
+    };
+    
+    // Set initial state based on current width
+    if (window.innerWidth < 1024) {
+      onToggle(true);
+    }
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [onToggle]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -103,16 +134,16 @@ export function Sidebar() {
 
   return (
     <aside
-      className={`fixed left-0 top-0 h-full w-64 flex flex-col ${
+      className={`fixed left-0 top-0 h-full flex flex-col ${
         isDark ? "bg-[#18191b] border-[#18191b]" : "bg-white border-gray-200"
-      } border-r transition-all duration-300`}
+      } border-r transition-all duration-300 z-50 ${isCollapsed ? "w-20" : "w-64"}`}
     >
-      <div className={``}>
-        <Logo />
+      <div className={`transition-all duration-300 ${isCollapsed ? "px-0" : "px-0"}`}>
+        <Logo showText={!isCollapsed} isCollapsed={isCollapsed} />
       </div>
 
       <nav className="flex-1 p-4 overflow-y-auto">
-        <p className={`text-xs font-semibold uppercase tracking-wider mb-3 px-3 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
+        <p className={`text-xs font-semibold uppercase tracking-wider mb-3 px-3 transition-opacity duration-300 ${isDark ? "text-gray-500" : "text-gray-400"} ${isCollapsed ? "opacity-0 invisible h-0" : "opacity-100"}`}>
           Menu
         </p>
         <ul className="space-y-1">
@@ -126,8 +157,11 @@ export function Sidebar() {
             >
               <NavLink
                 to={tab.route}
+                title={isCollapsed ? tab.title : ""}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                    isCollapsed ? "justify-center px-0" : ""
+                  } ${
                     isActive
                       ? isDark
                         ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-600/25"
@@ -138,8 +172,14 @@ export function Sidebar() {
                   }`
                 }
               >
-                <IconComponent name={tab.title} isDark={isDark} />
-                <span className="font-medium">{tab.title}</span>
+                <div className="shrink-0">
+                  <IconComponent name={tab.title} isDark={isDark} />
+                </div>
+                {!isCollapsed && (
+                  <span className="font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+                    {tab.title}
+                  </span>
+                )}
               </NavLink>
             </li>
           ))}
@@ -149,16 +189,43 @@ export function Sidebar() {
       <div className={`p-4 border-t ${isDark ? "border-[#18191b]" : "border-gray-100"}`}>
         <button
           onClick={handleLogout}
-          className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all duration-200 ${
+          title={isCollapsed ? "Logout" : ""}
+          className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer ${
+            isCollapsed ? "px-0" : ""
+          } ${
             isDark ? "bg-red-500/10 text-red-400 hover:bg-red-500/20" : "bg-red-50 text-red-600 hover:bg-red-100"
           }`}
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
-          <span className="font-medium">Logout</span>
+          <span className={`font-medium transition-all duration-300 ${isCollapsed ? "hidden opacity-0" : "block opacity-100"}`}>
+            Logout
+          </span>
         </button>
       </div>
+
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onToggle(!isCollapsed);
+        }}
+        className={`absolute -right-4 top-20 w-8 h-8 rounded-full border flex items-center justify-center transition-all duration-300 cursor-pointer z-[60] ${
+          isDark 
+            ? "bg-[#1e1f23] border-[#2d2e33] text-gray-400 hover:text-white" 
+            : "bg-white border-gray-200 text-gray-600 hover:text-gray-900 shadow-sm"
+        }`}
+      >
+        <svg 
+          className={`w-4 h-4 transition-transform duration-300 ${isCollapsed ? "" : "rotate-180"}`} 
+          fill="none" 
+          viewBox="0 0 24 24" 
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
     </aside>
   );
 }

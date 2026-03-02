@@ -189,7 +189,7 @@ export const WarehouseDashboard = ({ isDark }: WarehouseDashboardProps) => {
 
   return (
     <div className="space-y-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard
           title="Total Stock"
           value={`$${totalSold.toLocaleString()}`}
@@ -225,6 +225,7 @@ export const WarehouseDashboard = ({ isDark }: WarehouseDashboardProps) => {
           width="full"
           height="h-56"
           color="orange"
+          className="md:col-span-2 lg:col-span-1"
         />
       </div>
 
@@ -236,35 +237,35 @@ export const WarehouseDashboard = ({ isDark }: WarehouseDashboardProps) => {
               : "bg-white border border-gray-100 shadow-xl shadow-gray-200/50"
           }`}
         >
-          <div className="flex items-center justify-between mb-6">
-            <div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div className="flex-1 min-w-0">
               <h3
-                className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
+                className={`text-lg sm:text-xl font-bold truncate ${isDark ? "text-white" : "text-gray-900"}`}
               >
                 Warehouse Overview
               </h3>
               <p
-                className={`text-sm mt-1 ${isDark ? "text-gray-500" : "text-gray-500"}`}
+                className={`text-xs sm:text-sm mt-1 truncate ${isDark ? "text-gray-500" : "text-gray-500"}`}
               >
                 Track your warehouse performance
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <select
                 value={chartPeriod}
                 onChange={handlePeriodChange}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all ${
                   isDark
                     ? "bg-[#25262b] text-gray-300 border border-[#373a40] hover:border-gray-600"
                     : "bg-gray-100 text-gray-700 border border-gray-200 hover:border-gray-300"
                 } cursor-pointer`}
               >
-                <option value="week">This Week</option>
-                <option value="month">This Month</option>
-                <option value="year">This Year</option>
+                <option value="week">Week</option>
+                <option value="month">Month</option>
+                <option value="year">Year</option>
               </select>
               <button
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all ${
                   isDark
                     ? "bg-blue-600 hover:bg-blue-500 text-white"
                     : "bg-blue-600 hover:bg-blue-700 text-white"

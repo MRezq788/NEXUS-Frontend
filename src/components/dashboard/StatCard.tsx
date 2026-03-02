@@ -12,6 +12,7 @@ interface StatCardProps {
   width?: string;
   height?: string;
   color?: "blue" | "green" | "purple" | "orange" | "red";
+  className?: string;
 }
 
 export const StatCard = ({
@@ -25,6 +26,7 @@ export const StatCard = ({
   width = "full",
   height = "h-32",
   color = "blue",
+  className = "",
 }: StatCardProps) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -86,7 +88,7 @@ export const StatCard = ({
         isDark
           ? "bg-[#1e1f23] border border-[#2d2e33]"
           : "bg-white border border-gray-100 shadow-lg shadow-gray-200/40"
-      } ${isVisible ? "opacity-100" : "opacity-0"} w-${width} ${height}`}
+      } ${isVisible ? "opacity-100" : "opacity-0"} w-${width} ${height} ${className}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{

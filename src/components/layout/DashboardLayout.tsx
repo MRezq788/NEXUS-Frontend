@@ -25,11 +25,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { isDark, toggleTheme } = useTheme();
   const [userName, setUserName] = useState("User");
   const [userRole, setUserRole] = useState("Business Owner");
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        const name = user.email?.split('@')[0] || 'User';
+        console.log(user);
+        
+        const name = user.displayName || 'User' ;
         setUserName(name.charAt(0).toUpperCase() + name.slice(1));
         
         if (user.email?.includes('warehouse')) {
@@ -43,10 +46,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }, []);
 
   return (
-    <div className={`flex min-h-screen ${isDark ? "bg-black" : "bg-slate-50"}`}>
-      <Sidebar />
+    <div className={`flex min-h-screen transition-all duration-300 ${isDark ? "bg-black" : "bg-slate-50"}`}>
+      <Sidebar isCollapsed={isSidebarCollapsed} onToggle={setIsSidebarCollapsed} />
 
-      <div className="flex-1 ml-64 flex flex-col">
+      <div className={`flex-1 flex flex-col transition-all duration-300 ${isSidebarCollapsed ? "ml-20" : "ml-0 lg:ml-64"}`}>
         <header
           className={`flex items-center mt-4 justify-between px-8 backdrop-blur-sm h-20 ${
             isDark
@@ -57,12 +60,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           <div className="flex items-center gap-4">
             <div>
               <h2
-                className={`text-3xl font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
+                className={`text-2xl lg:text-3xl font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
               >
-                Welcome Back, {userRole}!
+                Welcome Back, {userName}!
               </h2>
               <p
-                className={`mt-1 ${isDark ? "text-gray-500" : "text-gray-500"}`}
+                className={`mt-1 text-sm lg:text-base ${isDark ? "text-gray-500" : "text-gray-500"}`}
               >
                 Your business at a glance.
               </p>
@@ -121,7 +124,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         </header>
 
-        <main className="flex-1 px-8 pt-4 overflow-y-auto">{children}</main>
+        <main className="flex-1 px-4 lg:px-8 pt-4 overflow-y-auto w-full transition-all duration-300">
+          {children}
+        </main>
       </div>
     </div>
   );

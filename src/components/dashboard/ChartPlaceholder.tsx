@@ -134,7 +134,7 @@ export const ChartPlaceholder = ({
 
   return (
     <div
-      className={`relative h-56 rounded-2xl overflow-hidden transition-all duration-500 ${
+      className={`relative h-48 sm:h-56 lg:h-64 rounded-2xl overflow-hidden transition-all duration-500 ${
         isDark ? "bg-[#18191b]" : "bg-gradient-to-br from-gray-50 to-gray-100"
       }`}
     >
@@ -154,33 +154,45 @@ export const ChartPlaceholder = ({
         />
       </div>
 
-      <div className="relative h-full flex items-end justify-around px-2 pb-4 pt-10">
+      <div className="relative h-full flex items-end justify-around px-1 sm:px-2 pb-2 sm:pb-4 pt-8 sm:pt-10">
         {chartData.map((item, i) => {
           const maxValue = Math.max(...chartData.map(d => d.value), 1);
           const heightPercent = item.value === 0 
             ? 2 
             : Math.min(((progress[i] || 0) / maxValue) * 85, 90);
           
-          // Adjust bar width based on data length
-          const barWidth = chartData.length > 12 ? "w-2" : chartData.length > 7 ? "w-4 sm:w-5" : "w-5 sm:w-7";
-          const containerMaxWidth = chartData.length > 12 ? "max-w-[20px]" : chartData.length > 7 ? "max-w-[35px]" : "max-w-[40px]";
+          // Responsive bar width logic
+          const barWidth = chartData.length > 12 
+            ? "w-1.5 sm:w-2 mb-0.5" 
+            : chartData.length > 7 
+              ? "w-3 sm:w-4 lg:w-5 mb-1" 
+              : "w-4 sm:w-6 lg:w-8 mb-1.5";
+              
+          const containerMaxWidth = chartData.length > 12 
+            ? "max-w-[15px] sm:max-w-[20px]" 
+            : chartData.length > 7 
+              ? "max-w-[25px] sm:max-w-[35px]" 
+              : "max-w-[35px] sm:max-w-[50px]";
+          
+          // Responsive label visibility
+          const showLabel = chartData.length > 12 ? (i % 2 === 0) : true;
           
           return (
             <div
               key={i}
-              className={`flex flex-col items-center gap-1 flex-1 ${containerMaxWidth} group cursor-pointer`}
+              className={`flex flex-col items-center h-full flex-1 ${containerMaxWidth} group cursor-pointer`}
             >
-              <div className="relative w-full flex items-end justify-center h-36">
+              <div className="relative w-full flex items-end justify-center flex-1 min-h-0">
                 <div
-                  className={`absolute -top-6 left-1/2 -translate-x-1/2 px-1 py-0.5 rounded text-[8px] font-bold transition-all duration-200 ${
+                  className={`absolute -top-6 left-1/2 -translate-x-1/2 px-1 py-0.5 rounded text-[8px] font-bold transition-all duration-200 z-10 ${
                     isDark ? "bg-gray-800 text-white" : "bg-white text-gray-900 shadow-md"
-                  } opacity-0 group-hover:opacity-100 group-hover:translate-y-0 -translate-y-1`}
+                  } opacity-0 group-hover:opacity-100 group-hover:translate-y-0 -translate-y-1 whitespace-nowrap`}
                 >
                   {Math.round(progress[i] || 0)}
                 </div>
 
                 <div
-                  className={`${barWidth} rounded-t-lg relative overflow-hidden transition-all duration-300 group-hover:scale-110`}
+                  className={`${barWidth} rounded-t-md sm:rounded-t-lg relative overflow-hidden transition-all duration-300 group-hover:scale-x-110 lg:group-hover:scale-x-125`}
                   style={{
                     height: `${Math.max(heightPercent, 2)}%`,
                   }}
@@ -192,9 +204,9 @@ export const ChartPlaceholder = ({
               </div>
 
               <span
-                className={`text-[6px] sm:text-[8px] font-semibold uppercase tracking-wider truncate w-full text-center transition-all duration-200 ${
+                className={`text-[5px] sm:text-[8px] font-semibold uppercase tracking-wider truncate w-full text-center mt-2 transition-all duration-200 ${
                   isDark ? "text-gray-500 group-hover:text-gray-300" : "text-gray-500 group-hover:text-gray-900"
-                }`}
+                } ${showLabel ? "opacity-100" : "opacity-0 sm:opacity-100"}`}
               >
                 {item.label}
               </span>
