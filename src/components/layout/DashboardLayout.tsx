@@ -23,28 +23,10 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { isDark, toggleTheme } = useTheme();
+  const { user } = useAuth();
   const [userName, setUserName] = useState("User");
   const [userRole, setUserRole] = useState("Business Owner");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        console.log(user);
-
-        const name = user.displayName || "User";
-        setUserName(name.charAt(0).toUpperCase() + name.slice(1));
-
-        if (user.email?.includes("warehouse")) {
-          setUserRole("Warehouse Manager");
-        } else {
-          setUserRole("Business Owner");
-        }
-      }
-    });
-    return () => unsubscribe();
-  }, []);
-
   return (
     <div
       className={`flex min-h-screen transition-all duration-300 pb-5 ${isDark ? "bg-black" : "bg-slate-50"}`}
@@ -74,7 +56,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <p
                 className={`mt-1 text-sm lg:text-base ${isDark ? "text-gray-500" : "text-gray-500"}`}
               >
-                Your business at a glance.
+                {""}
               </p>
             </div>
           </div>
