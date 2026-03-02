@@ -31,14 +31,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         console.log(user);
-        
-        const name = user.displayName || 'User' ;
+
+        const name = user.displayName || "User";
         setUserName(name.charAt(0).toUpperCase() + name.slice(1));
-        
-        if (user.email?.includes('warehouse')) {
-          setUserRole('Warehouse Manager');
+
+        if (user.email?.includes("warehouse")) {
+          setUserRole("Warehouse Manager");
         } else {
-          setUserRole('Business Owner');
+          setUserRole("Business Owner");
         }
       }
     });
@@ -46,15 +46,22 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }, []);
 
   return (
-    <div className={`flex min-h-screen transition-all duration-300 ${isDark ? "bg-black" : "bg-slate-50"}`}>
-      <Sidebar isCollapsed={isSidebarCollapsed} onToggle={setIsSidebarCollapsed} />
+    <div
+      className={`flex min-h-screen transition-all duration-300 pb-5 ${isDark ? "bg-black" : "bg-slate-50"}`}
+    >
+      <Sidebar
+        isCollapsed={isSidebarCollapsed}
+        onToggle={setIsSidebarCollapsed}
+      />
 
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${isSidebarCollapsed ? "ml-20" : "ml-0 lg:ml-64"}`}>
+      <div
+        className={`flex-1 flex flex-col transition-all duration-300 ${isSidebarCollapsed ? "ml-20" : "ml-0 lg:ml-64"}`}
+      >
         <header
           className={`flex items-center mt-4 justify-between px-8 backdrop-blur-sm h-20 ${
             isDark
-                ? "bg-black/80 border-[#18191b]"
-                : "bg-slate-50 border-gray-200"
+              ? "bg-black/80 border-[#18191b]"
+              : "bg-slate-50 border-gray-200"
           }`}
         >
           <div className="flex items-center gap-4">

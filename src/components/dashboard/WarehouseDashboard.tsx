@@ -347,6 +347,46 @@ export const WarehouseDashboard = ({ isDark }: WarehouseDashboardProps) => {
           showGrowing
         />
       </div>
+      <div className="flex items-center gap-4">
+        <ListView
+          isDark={isDark}
+          activities={
+            recentOrders.length > 0
+              ? recentOrders
+              : [
+                  {
+                    title: "Loading...",
+                    time: "",
+                    icon: "orders",
+                    variant: "default" as const,
+                  },
+                ]
+          }
+          title="Recent Orders"
+          subtitle="Your latest 5 orders"
+          height="h-[29rem]"
+          width="w-1/2"
+        />
+        <ListView
+          isDark={isDark}
+          activities={
+            recentOrders.length > 0
+              ? recentOrders
+              : [
+                  {
+                    title: "Loading...",
+                    time: "",
+                    icon: "orders",
+                    variant: "default" as const,
+                  },
+                ]
+          }
+          title="Recent Orders"
+          subtitle="Your latest 5 orders"
+          height="h-[29rem]"
+          width="w-1/2"
+        />
+      </div>
     </div>
   );
 };
