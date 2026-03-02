@@ -4,11 +4,11 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthLayout } from './components/layout/AuthLayout';
 import { DashboardLayout } from './components/layout/DashboardLayout';
 import { Dashboard } from './pages/Dashboard';
-import { StockPage } from './pages/StockPage';
+import { StockPage } from './pages/WarehouseStockPage';
 import { LoginPage } from './pages/LoginPage';
 import { UnauthorizedPage } from './pages/UnauthorizedPage';
-import { OrdersPage } from './pages/OrdersPage';
-import { OrderDetailsPage } from './pages/OrderDetailsPage';
+import { OrdersPage } from './pages/WarehouseOrdersPage';
+import { OrderDetailsPage } from './pages/WarehouseOrderDetailsPage';
 
 function App() {
   return (

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 import type { Order, OrderStatus } from "../config/types";
-import { getOrders, updateOrderStatus, acceptOrder, rejectOrder, cancelOrder } from "../services/api";
+import { getOrders, updateOrderStatus, acceptOrder, rejectOrder, cancelOrder } from "../services/warehouse.inventory.api";
 
 // Status badge component for orders - Updated to match StockPage style
 const OrderStatusBadge = ({ status, isDark }: { status: OrderStatus; isDark: boolean }) => {
@@ -201,7 +201,14 @@ const AlertModal = ({
     </div>
   );
 };
-
+const getDelayClass = (ms: number) => {
+    // If your delay matches a standard Tailwind value, use it
+    const validDelays = [0, 75, 100, 150, 200, 300, 500, 700, 1000];
+      
+    // Find the closest valid delay (or just ensure your data matches these)
+    if (validDelays.includes(ms)) return `delay-${ms}`; 
+    return 'delay-75'; // Fallback
+  };
 // Order Card Component - Updated with action buttons
 const OrderCard = ({
   order,
@@ -235,12 +242,16 @@ const OrderCard = ({
 
   return (
     <div
-      className={`relative overflow-hidden p-6 rounded-2xl transition-all duration-500 hover:scale-[1.02] ${
-        isDark
+      className={`
+        relative overflow-hidden p-6 rounded-2xl 
+        transition-all duration-500 hover:scale-[1.02]
+        ${getDelayClass(delay)}
+        ${isDark
           ? "bg-[#18191b] border border-gray-800"
           : "bg-white border border-gray-100 shadow-lg shadow-gray-200/50"
-      } ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
-      style={{ transitionDelay: `${delay}ms` }}
+        } 
+        ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}
+      `}
     >
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
@@ -651,6 +662,7 @@ export function OrdersPage() {
             Filter by Status:
           </span>
           <select
+            aria-label="Filter orders by status"
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value as OrderStatus | "All")}
             className={`px-3 py-2 rounded-lg border text-lg ${
@@ -701,11 +713,11 @@ export function OrdersPage() {
       {/* Empty State */}
       {!isLoading && orders.length === 0 && (
         <div className="py-12 text-center">
-          <div className="text-4xl mb-4">📋</div>
-          <p className={`text-lg font-medium ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+          <div className="text-7xl mb-4">📋</div>
+          <p className={`text-4xl font-medium ${isDark ? "text-gray-400" : "text-gray-600"}`}>
             No orders found
           </p>
-          <p className={`text-sm mt-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
+          <p className={`text-lg mt-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
             Try adjusting your filter
           </p>
         </div>
