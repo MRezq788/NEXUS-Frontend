@@ -7,6 +7,8 @@ import { Dashboard } from './pages/Dashboard';
 import { LoginPage } from './pages/LoginPage';
 import { UnauthorizedPage } from './pages/UnauthorizedPage';
 import { Inventory } from './pages/Inventory';
+import { Warehouses } from './pages/Warehouses';
+import { WarehouseShop } from './pages/WarehouseShop';
 
 function App() {
   return (
@@ -34,6 +36,28 @@ function App() {
                 <AuthLayout allowedRoles={['business_owner']}>
                   <DashboardLayout>
                     <Inventory />
+                  </DashboardLayout>
+                </AuthLayout>
+              }
+            />
+
+            <Route
+              path="/warehouses"
+              element={
+                <AuthLayout allowedRoles={['business_owner']}>
+                  <DashboardLayout>
+                    <Warehouses />
+                  </DashboardLayout>
+                </AuthLayout>
+              }
+            />
+
+            <Route
+              path="/warehouses/shop"
+              element={
+                <AuthLayout>
+                  <DashboardLayout>
+                    <WarehouseShop />
                   </DashboardLayout>
                 </AuthLayout>
               }
