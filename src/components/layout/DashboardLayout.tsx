@@ -23,7 +23,6 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { isDark, toggleTheme } = useTheme();
-  const { user } = useAuth();
   const [userName, setUserName] = useState("User");
   const [userRole, setUserRole] = useState("Business Owner");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
