@@ -1,7 +1,10 @@
-export const BASE_URL = "http://192.168.1.7:3000/api";
+const envBaseUrl = import.meta.env.VITE_API_BASE_URL as string | undefined;
+export const BASE_URL = envBaseUrl ?? "http://localhost:3000/api";
 
 interface FetchOptions {
   params?: Record<string, string | number | undefined>;
+  method?: "GET" | "POST" | "PUT" | "DELETE";
+  body?: Record<string, unknown>;
 }
 
 interface ApiResponse<T> {
@@ -48,7 +51,7 @@ export async function fetchApi<T>(
   endpoint: string,
   options: FetchOptions = {},
 ): Promise<ApiResponse<T>> {
-  const { params } = options;
+  const { params, method = "GET", body } = options;
 
   const queryString = params
     ? "?" + new URLSearchParams(params as Record<string, string>).toString()
@@ -61,15 +64,17 @@ export async function fetchApi<T>(
     console.log(token);
 
     const response = await fetch(url, {
-      method: "GET",
+      method,
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
+      ...(body && { body: JSON.stringify(body) }),
     });
 
     if (!response.ok) {
-      throw new ApiError(response.status, `API Error: ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({ message: response.statusText }));
+      throw new ApiError(response.status, errorData.message || `API Error: ${response.statusText}`);
     }
 
     return await response.json();

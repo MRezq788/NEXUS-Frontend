@@ -86,4 +86,29 @@ export const usersApi = {
       params: { limit },
     });
   },
+
+  createCashier: async (name: string, email: string, password: string) => {
+    return fetchApi<{ uid: string; email: string; name: string }>(`/users/cashiers`, {
+      method: "POST",
+      body: { name, email, password },
+    });
+  },
+
+  getUserProfile: async () => {
+    return fetchApi<{ email: string; name: string; role: string; profileImageUrl?: string }>(`/users/profile`);
+  },
+
+  getCashiers: async () => {
+    return fetchApi<{
+      cashiers: Array<{
+        id: string;
+        email: string;
+        name: string;
+        role: string;
+        businessOwnerId: string;
+        createdAt?: unknown;
+        profileImageUrl?: string;
+      }>
+    }>(`/users/cashiers`);
+  },
 };
