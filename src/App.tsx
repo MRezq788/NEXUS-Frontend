@@ -10,6 +10,7 @@ import { Warehouses } from "./pages/Warehouses";
 import { WarehouseShop } from "./pages/WarehouseShop";
 import { OrdersPage } from "./pages/WarehouseOrdersPage";
 import { OrderDetailsPage } from "./pages/WarehouseOrderDetailsPage";
+import { StaffManagement } from "./pages/StaffManagement";
 import { ProtectedRoute } from "./components/layout/ProtectedRoute";
 
 function App() {
@@ -93,6 +94,17 @@ function App() {
               <ProtectedRoute>
                 <DashboardLayout>
                   <OrderDetailsPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/staff-management"
+            element={
+              <ProtectedRoute requiredRole="business_owner">
+                <DashboardLayout>
+                  <StaffManagement />
                 </DashboardLayout>
               </ProtectedRoute>
             }

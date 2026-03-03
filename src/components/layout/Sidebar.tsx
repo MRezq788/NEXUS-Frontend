@@ -4,7 +4,8 @@ import { useTheme } from "../../contexts/ThemeContext";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { initializeApp } from "firebase/app";
 import type { SidebarTab } from "../../config/types";
-import { sidebarTabs, warehouseTabs } from "../../config/sidebar";
+import { sidebarTabs, warehouseTabs, cashierTabs } from "../../config/sidebar";
+import { usersApi } from "../../api";
 import Logo from "./Logo";
 
 const firebaseConfig = {
@@ -188,7 +189,12 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   const [isVisible, setIsVisible] = useState(false);
   const navigate = useNavigate();
 
-  const tabs: SidebarTab[] = role === "warehouse" ? warehouseTabs : sidebarTabs;
+  const tabs: SidebarTab[] =
+    role === "warehouse"
+      ? warehouseTabs
+      : role === "cashier"
+        ? cashierTabs
+        : sidebarTabs.filter((tab) => role === "business_owner" || tab.title !== "Staff Management");
 
   useEffect(() => {
     let lastWidth = window.innerWidth;
@@ -217,11 +223,30 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   }, [onToggle]);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user?.email?.includes("warehouse")) {
-        setRole("warehouse");
-      } else {
-        setRole("business_owner");
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          // Fetch user profile from API to get actual role
+          const response = await usersApi.getUserProfile();
+          if (response.success && response.data?.role) {
+            setRole(response.data.role);
+          } else {
+            // Fallback to email-based detection
+            if (user.email?.includes("warehouse")) {
+              setRole("warehouse");
+            } else {
+              setRole("business_owner");
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching user profile:', error);
+          // Fallback to email-based detection
+          if (user.email?.includes("warehouse")) {
+            setRole("warehouse");
+          } else {
+            setRole("business_owner");
+          }
+        }
       }
     });
     return () => unsubscribe();
