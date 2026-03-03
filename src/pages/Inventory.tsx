@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useTheme } from "../contexts/ThemeContext";
+import { getAuth } from "firebase/auth";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -40,8 +41,6 @@ interface ApiCountResponse {
 
 const API_URL = "http://localhost:3000/api/business-inventory";
 const PAGE_SIZE = 10;
-// const EMAIL = localStorage.getItem('userEmail') || 'owener5@nexus.com'; // hardcoded for development
-const EMAIL = 'owner5@nexus.com'; // hardcoded for development
 
 // ─── Icon helpers ────────────────────────────────────────────────────────────
 
@@ -224,20 +223,23 @@ export function Inventory() {
 
   const fetchStats = useCallback(async () => {
     try {
+      const auth = getAuth();
+      const user = auth.currentUser;
+      const email = user?.email || "";
       const [totalRes, inStockRes, outStockRes] = await Promise.all([
         fetch(`${API_URL}/count`, {
             headers: { 
-                "X-User-Email": EMAIL
+                "X-User-Email": email
             } 
         }),
         fetch(`${API_URL}/count?inStock=true`, {
             headers: { 
-                "X-User-Email": EMAIL
+                "X-User-Email": email
             } 
         }),
         fetch(`${API_URL}/count?inStock=false`, {
             headers: { 
-                "X-User-Email": EMAIL
+                "X-User-Email": email
             } 
         }),
       ]);
@@ -274,9 +276,12 @@ export function Inventory() {
         if (debouncedSearch) params.set("search", debouncedSearch);
         if (stockFilter !== "all") params.set("inStock", stockFilter);
 
+        const auth = getAuth();
+        const user = auth.currentUser;
+        const email = user?.email || "";
         const res = await fetch(`${API_URL}?${params.toString()}`, {
             headers: { 
-                "X-User-Email": EMAIL
+                "X-User-Email": email
             } 
         });
         const json: ApiResponse = await res.json();

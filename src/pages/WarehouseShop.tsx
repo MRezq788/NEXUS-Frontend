@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
-// import { useAuth } from "../contexts/AuthContext";
+import { getAuth } from "firebase/auth";
 import { WarehouseProducts } from "./WarehouseProducts";
 import { ProductDetail } from "./ProductDetail";
 import type { Product } from "./WarehouseProducts";
@@ -88,9 +88,10 @@ export function WarehouseShop() {
     setOrderSuccess(false);
 
     try {
+      const auth = getAuth();
+      const user = auth.currentUser;
       const body = {
-        // buyerEmail: user?.email || "owner5@test.com",
-        buyerEmail: "owner5@nexus.com", // for development
+        buyerEmail: user?.email || "",
         sellerEmail: warehouseEmail,
         total: Math.round(totalPrice * 100) / 100,
         products: cart.map((item) => ({

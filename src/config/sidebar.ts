@@ -4,7 +4,7 @@ export const sidebarTabs: SidebarTab[] = [
   { title: 'Dashboard', route: '/dashboard' },
   { title: 'Warehouses', route: '/warehouses' },
   { title: 'Inventory', route: '/dashboard/inventory' },
-  { title: 'Orders', route: '/dashboard/orders' },
+  { title: 'Orders', route: '/dashboard/business-owner-orders' },
   { title: 'Reports', route: '/dashboard/reports' },
   { title: 'Settings', route: '/dashboard/settings' },
 ];
