@@ -17,8 +17,11 @@ export const warehouseTabs: SidebarTab[] = [
 ];
 
 export const cashierTabs: SidebarTab[] = [
-  { title: 'Dashboard', route: '/dashboard' },
+  { title: 'Dashboard', route: '/pos' },
+  { title: 'Point of Sale', route: '/pos' },
+  { title: 'Inventory', route: '/dashboard/inventory' },
   { title: 'Orders', route: '/dashboard/orders' },
   { title: 'Reports', route: '/dashboard/reports' },
 ];
+
 

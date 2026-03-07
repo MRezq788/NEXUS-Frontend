@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { StatCard } from "./StatCard";
 import { ChartPlaceholder } from "./ChartPlaceholder";
 import { usersApi } from "../../api";
@@ -339,7 +340,8 @@ export const CashierDashboard = ({ isDark }: CashierDashboardProps) => {
           Quick Actions
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button
+          <Link
+            to="/pos"
             className={`p-4 rounded-xl text-left transition-all ${
               isDark
                 ? "bg-[#25262b] hover:bg-[#2c2d32] border border-[#373a40]"
@@ -363,9 +365,10 @@ export const CashierDashboard = ({ isDark }: CashierDashboardProps) => {
                 </p>
               </div>
             </div>
-          </button>
+          </Link>
 
-          <button
+          <Link
+            to="/dashboard/orders"
             className={`p-4 rounded-xl text-left transition-all ${
               isDark
                 ? "bg-[#25262b] hover:bg-[#2c2d32] border border-[#373a40]"
@@ -380,18 +383,19 @@ export const CashierDashboard = ({ isDark }: CashierDashboardProps) => {
                 <p
                   className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
                 >
-                  View Reports
+                  View Orders
                 </p>
                 <p
                   className={`text-sm ${isDark ? "text-gray-500" : "text-gray-500"}`}
                 >
-                  Check your performance
+                  Check your transactions
                 </p>
               </div>
             </div>
-          </button>
+          </Link>
 
-          <button
+          <Link
+            to="/dashboard/inventory"
             className={`p-4 rounded-xl text-left transition-all ${
               isDark
                 ? "bg-[#25262b] hover:bg-[#2c2d32] border border-[#373a40]"
@@ -415,7 +419,7 @@ export const CashierDashboard = ({ isDark }: CashierDashboardProps) => {
                 </p>
               </div>
             </div>
-          </button>
+          </Link>
         </div>
       </div>
     </div>
