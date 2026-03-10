@@ -3,10 +3,14 @@ import {
   ShoppingCart,
   FileText,
   Package,
+  Activity,
+  BarChart3,
+  Users,
+  Settings,
   LogOut,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { getAuth, signOut } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 
 interface SidebarMenuProps {
@@ -22,11 +26,18 @@ export function SidebarMenu({ isDark, isOpen, onClose }: SidebarMenuProps) {
   const auth = getAuth();
 
   useEffect(() => {
-    const user = auth.currentUser;
-    if (user) {
-      setUserName(user.displayName || user.email?.split('@')[0] || 'Cashier');
-      setUserEmail(user.email || '');
-    }
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUserName(user.displayName || user.email?.split('@')[0] || 'Cashier');
+        setUserEmail(user.email || '');
+        return;
+      }
+
+      setUserName('Cashier');
+      setUserEmail('');
+    });
+
+    return () => unsubscribe();
   }, [auth]);
 
   const handleLogout = async () => {
@@ -44,6 +55,10 @@ export function SidebarMenu({ isDark, isOpen, onClose }: SidebarMenuProps) {
     { icon: ShoppingCart, label: 'Point of Sale', active: true, path: '/pos' },
     { icon: Package, label: 'Inventory', path: '/dashboard/inventory' },
     { icon: FileText, label: 'Orders', path: '/dashboard/orders' },
+    { icon: Activity, label: 'Activity', path: '/dashboard' },
+    { icon: BarChart3, label: 'Report', path: '/dashboard/reports' },
+    { icon: Users, label: 'Team', path: '/staff-management' },
+    { icon: Settings, label: 'Setting', path: '/dashboard/settings' },
   ];
 
   const getInitials = (name: string) => {

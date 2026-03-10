@@ -58,15 +58,24 @@ export function PointOfSale() {
     { customer: 'Billie', table: 'Table 03', status: 'Take Away', time: '08:45 AM' },
     { customer: 'Richard', table: 'Table 02', status: 'Dine In', time: '09:15 AM' },
     { customer: 'Sharon', table: 'Table 01', status: 'Take Away', time: '08:15 AM' },
+    { customer: 'James', table: 'Table 05', status: 'Dine In', time: '10:20 AM' },
+    { customer: 'Olivia', table: 'Table 06', status: 'Take Away', time: '09:50 AM' },
+    { customer: 'Ethan', table: 'Table 07', status: 'Dine In', time: '11:05 AM' },
+    { customer: 'Sophia', table: 'Table 08', status: 'Take Away', time: '10:35 AM' },
+    { customer: 'Liam', table: 'Table 09', status: 'Dine In', time: '11:30 AM' },
+    { customer: 'Ava', table: 'Table 10', status: 'Take Away', time: '09:00 AM' },
+    { customer: 'Noah', table: 'Table 11', status: 'Dine In', time: '10:45 AM' },
+    { customer: 'Emma', table: 'Table 12', status: 'Take Away', time: '08:30 AM' },
   ];
 
   return (
       <div className={`h-screen flex flex-col overflow-hidden ${isDark ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' : 'bg-gradient-to-br from-gray-50 via-blue-50 to-blue-100'}`}>
-        <POSHeader isDark={isDark} onMenuClick={() => setIsSidebarOpen(true)} onCloseOrder={handleCloseOrder} />
-
         <div className="flex-1 flex overflow-hidden">
           {/* Main Content Area */}
           <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Header - part of left content column */}
+            <POSHeader isDark={isDark} onMenuClick={() => setIsSidebarOpen(true)} onCloseOrder={handleCloseOrder} />
+
             {/* Category Tabs - Scrollable on mobile */}
             <div className={`px-3 sm:px-4 md:px-6 pt-4 pb-2 border-b ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
               <CategoryTabs
@@ -78,7 +87,7 @@ export function PointOfSale() {
             </div>
 
             {/* Products Grid - Scrollable */}
-            <div className="flex-1 overflow-y-auto px-3 sm:px-4 md:px-6 py-4">
+            <div className="flex-1 overflow-y-auto px-3 sm:px-4 md:px-6 py-4 scrollbar-hide">
               <ProductGrid
                   isDark={isDark}
                   products={filteredProducts}
@@ -87,14 +96,14 @@ export function PointOfSale() {
               />
             </div>
 
-            {/* Active Orders Tracker - Hidden on mobile, shown on tablet+ */}
-            <div className="hidden lg:block px-3 sm:px-4 md:px-6 pb-4">
+            {/* Active Orders Tracker - part of left content column */}
+            <div className="hidden lg:block  px-3 sm:px-4 md:px-6 pb-4">
               <TrackOrder isDark={isDark} activeOrders={activeOrders} />
             </div>
           </div>
 
           {/* Order Panel - Hidden on mobile, shown as sidebar on tablet+ */}
-          <div className="hidden md:block">
+          <div className="hidden md:flex h-full">
             <OrderPanel
                 isDark={isDark}
                 tables={mockTables}

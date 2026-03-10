@@ -1,4 +1,5 @@
 import { CreditCard as Edit, Minus, Plus, SmilePlus, CheckCircle } from 'lucide-react';
+import { useState } from 'react';
 import { usePOS } from '../../contexts/POSContext';
 import type { RestaurantTable } from '../../lib/database.types';
 
@@ -26,14 +27,17 @@ export function OrderPanel({ isDark, tables, orderNumber, onPlaceOrder }: OrderP
     setPromoCode,
   } = usePOS();
 
+  const [promoInput, setPromoInput] = useState('');
+
   const handlePromoApply = () => {
-    if (!promoCode) {
-      setPromoCode('PROMO2024');
+    if (promoInput.trim()) {
+      setPromoCode(promoInput.trim());
+      setPromoInput('');
     }
   };
 
   return (
-    <div className={`w-full md:w-96 lg:w-[400px] border-l flex flex-col max-h-screen ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+    <div className={`w-full md:w-96 lg:w-[400px] border-l flex flex-col h-full ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
       {/* Header */}
       <div className={`p-3 sm:p-4 border-b ${isDark ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
         <div className="flex items-center justify-between mb-3 sm:mb-4">
@@ -164,23 +168,30 @@ export function OrderPanel({ isDark, tables, orderNumber, onPlaceOrder }: OrderP
         </div>
 
         {/* Promo and Payment Method */}
-        <div className="flex flex-col sm:flex-row gap-2 pt-2">
+        <div className="flex gap-2 pt-2">
           {promoCode ? (
             <div className={`flex-1 px-3 sm:px-4 py-2 border rounded-lg flex items-center justify-between ${isDark ? 'bg-green-900/20 border-green-800 text-green-400' : 'bg-green-50 border-green-500 text-green-700'}`}>
-              <span className="text-xs sm:text-sm font-medium">
-                Promo Applied ✓
-              </span>
+              <span className="text-xs sm:text-sm font-medium">Promo Applied ✓</span>
               <CheckCircle className="w-4 h-4" />
             </div>
           ) : (
-            <button
-              onClick={handlePromoApply}
-              className={`flex-1 px-3 sm:px-4 py-2 border rounded-lg text-xs sm:text-sm hover:bg-opacity-80 transition-colors flex items-center justify-center gap-2 ${isDark ? 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'}`}
-            >
-              <SmilePlus className="w-4 h-4" />
-              <span className="hidden sm:inline">Add Promo</span>
-              <span className="sm:hidden">Promo</span>
-            </button>
+            <>
+              <input
+                type="text"
+                value={promoInput}
+                onChange={(e) => setPromoInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handlePromoApply()}
+                placeholder="Promo code..."
+                className={`flex-1 px-3 py-2 border rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 ${isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'}`}
+              />
+              <button
+                onClick={handlePromoApply}
+                className={`px-3 py-2 border rounded-lg text-xs sm:text-sm font-medium transition-colors flex items-center gap-1 ${isDark ? 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'}`}
+              >
+                <SmilePlus className="w-4 h-4" />
+                Apply
+              </button>
+            </>
           )}
         </div>
 
