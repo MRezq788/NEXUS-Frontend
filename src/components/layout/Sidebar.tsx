@@ -1,24 +1,12 @@
 import { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useTheme } from "../../contexts/ThemeContext";
-import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
-import { initializeApp } from "firebase/app";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import type { SidebarTab } from "../../config/types";
 import { sidebarTabs, warehouseTabs, cashierTabs } from "../../config/sidebar";
 import { usersApi } from "../../api";
+import { auth } from "../../config/firbase";
 import Logo from "./Logo";
-
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
 
 const IconComponent = ({ name, isDark }: { name: string; isDark: boolean }) => {
   const color = isDark ? "#9ca3af" : "#6b7280";
@@ -194,7 +182,10 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       ? warehouseTabs
       : role === "cashier"
         ? cashierTabs
-        : sidebarTabs.filter((tab) => role === "business_owner" || tab.title !== "Staff Management");
+        : sidebarTabs.filter(
+            (tab) =>
+              role === "business_owner" || tab.title !== "Staff Management",
+          );
 
   useEffect(() => {
     let lastWidth = window.innerWidth;
@@ -239,7 +230,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
             }
           }
         } catch (error) {
-          console.error('Error fetching user profile:', error);
+          console.error("Error fetching user profile:", error);
           // Fallback to email-based detection
           if (user.email?.includes("warehouse")) {
             setRole("warehouse");

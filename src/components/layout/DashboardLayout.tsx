@@ -1,21 +1,10 @@
 import { useState, useEffect } from "react";
 import type { ReactNode } from "react";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { initializeApp } from "firebase/app";
+import { onAuthStateChanged } from "firebase/auth";
 import { useTheme } from "../../contexts/ThemeContext";
 import { Sidebar } from "./Sidebar";
-
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+import { auth } from "../../config/firbase";
+import { usersApi } from "../../api";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -24,8 +13,37 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { isDark, toggleTheme } = useTheme();
   const [userName, setUserName] = useState("User");
-  const [userRole, setUserRole] = useState("Business Owner");
+  const [userRole, setUserRole] = useState("app_User");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        setUserName("User");
+        setUserRole("app_User");
+        return;
+      }
+
+      try {
+        const response = await usersApi.getUserProfile();
+        if (response.success && response.data) {
+          setUserName(response.data.name || user.displayName || "User");
+          setUserRole(response.data.role || "app_User");
+          return;
+        }
+      } catch (error) {
+        console.error("Failed to load user profile:", error);
+      }
+
+      setUserName(user.displayName || user.email?.split("@")[0] || "User");
+      setUserRole("app_User");
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const roleLabel = userRole.replace(/_/g, " ");
+
   return (
     <div
       className={`flex min-h-screen transition-all duration-300 pb-5 ${isDark ? "bg-black" : "bg-slate-50"}`}
@@ -55,7 +73,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <p
                 className={`mt-1 text-sm lg:text-base ${isDark ? "text-gray-500" : "text-gray-500"}`}
               >
-                {""}
+                {roleLabel.charAt(0).toUpperCase() + roleLabel.slice(1)}
               </p>
             </div>
           </div>

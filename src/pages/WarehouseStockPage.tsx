@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 import type { Product, ProductStatus } from "../config/types";
 import {
   getProducts,
-  createProduct,
-  updateProduct,
   deleteProduct,
   deleteProductsBatch,
   getProductStats,
@@ -16,7 +15,6 @@ import {
 // Import components
 import { StatusBadge } from "../components/warehouse/StatusBadge";
 import { StatCard } from "../components/warehouse/StatCard";
-import { ProductModal } from "../components/warehouse/ProductModal";
 import { ProductDetailsModal } from "../components/warehouse/ProductDetailsModal";
 import { ConfirmationModal } from "../components/warehouse/ConfirmationModal";
 import { Toast } from "../components/warehouse/Toast";
@@ -25,6 +23,7 @@ import { BatchUploadModal } from "../components/warehouse/BatchUploadModal";
 
 export function StockPage() {
   const { isDark } = useTheme();
+  const navigate = useNavigate();
 
   // Data states
   const [products, setProducts] = useState<Product[]>([]);
@@ -41,16 +40,18 @@ export function StockPage() {
   const [isSearching, setIsSearching] = useState(false);
 
   // Filter states
-  const [filterStatus, setFilterStatus] = useState<ProductStatus | "All">("All");
+  const [filterStatus, setFilterStatus] = useState<ProductStatus | "All">(
+    "All",
+  );
 
   // Selection states
-  const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
+  const [selectedProducts, setSelectedProducts] = useState<Set<string>>(
+    new Set(),
+  );
 
   // Modal states
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isBatchUploadModalOpen, setIsBatchUploadModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
 
   // Loading states
@@ -118,7 +119,10 @@ export function StockPage() {
       setTotalPages(response.totalPages);
       setSelectedProducts(new Set());
     } catch (error) {
-      showToast(error instanceof Error ? error.message : "Failed to fetch products", "error");
+      showToast(
+        error instanceof Error ? error.message : "Failed to fetch products",
+        "error",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -148,10 +152,6 @@ export function StockPage() {
     setTimeout(() => {
       setToast((prev) => ({ ...prev, isVisible: false }));
     }, 3000);
-  };
-
-  const computeStatus = (qty: number): ProductStatus => {
-    return qty === 0 ? "Out of Stock" : "In Stock";
   };
 
   // ==================== HANDLERS ====================
@@ -199,14 +199,15 @@ export function StockPage() {
     setConfirmModal({
       isOpen: true,
       title: "Delete Product",
-      message: "Are you sure you want to delete this product? This action cannot be undone.",
+      message:
+        "Are you sure you want to delete this product? This action cannot be undone.",
       confirmText: "Delete",
       cancelText: "Cancel",
       type: "danger",
       onConfirm: async () => {
         setConfirmModal((prev) => ({ ...prev, isOpen: false }));
         setIsActionLoading(true);
-        
+
         try {
           await deleteProduct(id);
           showToast("Product deleted successfully", "success");
@@ -217,7 +218,10 @@ export function StockPage() {
             fetchProducts();
           }
         } catch (error) {
-          showToast(error instanceof Error ? error.message : "Failed to delete product", "error");
+          showToast(
+            error instanceof Error ? error.message : "Failed to delete product",
+            "error",
+          );
         } finally {
           setIsActionLoading(false);
         }
@@ -236,15 +240,23 @@ export function StockPage() {
       onConfirm: async () => {
         setConfirmModal((prev) => ({ ...prev, isOpen: false }));
         setIsActionLoading(true);
-        
+
         try {
           await deleteProductsBatch(Array.from(selectedProducts));
-          showToast(`${selectedProducts.size} products deleted successfully`, "success");
+          showToast(
+            `${selectedProducts.size} products deleted successfully`,
+            "success",
+          );
           fetchStats();
           setSelectedProducts(new Set());
           fetchProducts();
         } catch (error) {
-          showToast(error instanceof Error ? error.message : "Failed to delete products", "error");
+          showToast(
+            error instanceof Error
+              ? error.message
+              : "Failed to delete products",
+            "error",
+          );
         } finally {
           setIsActionLoading(false);
         }
@@ -252,80 +264,48 @@ export function StockPage() {
     });
   };
 
-  const handleSaveProduct = async (productData: Partial<Product>) => {
-    setIsModalOpen(false);
-    setEditingProduct(null);
-    setIsActionLoading(true);
-    
-    try {
-      if (editingProduct) {
-        const oldStatus = editingProduct.status;
-        const newStatus = computeStatus(productData.quantity || 0);
-        const statusChanged = oldStatus !== newStatus;
-
-        await updateProduct(editingProduct.id, {
-          ...productData,
-          status: newStatus,
-        });
-        showToast("Product updated successfully", "success");
-        
-        if (statusChanged) {
-          fetchStats();
-        }
-      } else {
-        await createProduct({
-          ...productData,
-          status: computeStatus(productData.quantity || 0),
-        });
-        showToast("Product added successfully", "success");
-        fetchStats();
-      }
-      fetchProducts();
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : "Failed to save product", "error");
-    } finally {
-      setIsActionLoading(false);
-    }
-  };
-
   const handleBatchUpload = async (products: Partial<Product>[]) => {
     if (products.length === 0) return;
-    
+
     setIsActionLoading(true);
     setIsBatchUploadModalOpen(false);
-    
+
     try {
       const result: BatchUploadResult = await batchUploadProducts(products);
-      
+
       if (result.created > 0) {
         showToast(`Successfully created ${result.created} products`, "success");
         fetchStats();
         fetchProducts();
       }
-      
+
       if (result.failed > 0) {
-        console.error('Batch upload errors:', result.errors);
+        console.error("Batch upload errors:", result.errors);
         if (result.created === 0) {
           showToast(`Failed to upload: ${result.errors[0]}`, "error");
         } else {
-          showToast(`${result.failed} products failed to upload. Check console for details.`, "error");
+          showToast(
+            `${result.failed} products failed to upload. Check console for details.`,
+            "error",
+          );
         }
       }
     } catch (error) {
-      showToast(error instanceof Error ? error.message : "Failed to upload products", "error");
+      showToast(
+        error instanceof Error ? error.message : "Failed to upload products",
+        "error",
+      );
     } finally {
       setIsActionLoading(false);
     }
   };
 
-  const openAddModal = () => {
-    setEditingProduct(null);
-    setIsModalOpen(true);
+  const openEditModal = (product: Product) => {
+    navigate(`/dashboard/inventory/edit/${product.id}`);
   };
 
-  const openEditModal = (product: Product) => {
-    setEditingProduct(product);
-    setIsModalOpen(true);
+  const openAddPage = () => {
+    navigate("/dashboard/inventory/add");
   };
 
   const openDetailsModal = (product: Product) => {
@@ -349,11 +329,18 @@ export function StockPage() {
           isVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"
         } transition-all duration-500`}
       >
-        <h2 className={`text-3xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+        <h2
+          className={`text-3xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
+        >
           Warehouse Stock
         </h2>
         <p className={`mt-1 ${isDark ? "text-gray-500" : "text-gray-500"}`}>
-          Today, {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+          Today,{" "}
+          {new Date().toLocaleDateString("en-US", {
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+          })}
         </p>
       </div>
 
@@ -391,7 +378,9 @@ export function StockPage() {
       {/* Inventory Table */}
       <div
         className={`rounded-2xl overflow-hidden ${
-          isDark ? "bg-[#18191b] border border-gray-800" : "bg-white border border-gray-100 shadow-xl"
+          isDark
+            ? "bg-[#18191b] border border-gray-800"
+            : "bg-white border border-gray-100 shadow-xl"
         }`}
       >
         {/* Table Header */}
@@ -400,7 +389,9 @@ export function StockPage() {
             isDark ? "border-gray-800" : "border-gray-100"
           }`}
         >
-          <h3 className={`text-2xl font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
+          <h3
+            className={`text-2xl font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
+          >
             Inventory Overview
           </h3>
           <div className="flex items-center gap-3">
@@ -430,13 +421,38 @@ export function StockPage() {
                 title="Search"
               >
                 {isSearching ? (
-                  <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    className="w-6 h-6 animate-spin"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
                 ) : (
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
                   </svg>
                 )}
               </button>
@@ -450,8 +466,18 @@ export function StockPage() {
                   }`}
                   title="Clear search"
                 >
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               )}
@@ -474,13 +500,25 @@ export function StockPage() {
               <option value="Out of Stock">Out of Stock</option>
             </select>
             <button
-              onClick={openAddModal}
+              onClick={openAddPage}
               className={`px-4 py-2 rounded-lg font-medium text-white text-lg flex items-center gap-2 transition-all ${
-                isDark ? "bg-teal-600 hover:bg-teal-700" : "bg-teal-600 hover:bg-teal-700"
+                isDark
+                  ? "bg-teal-600 hover:bg-teal-700"
+                  : "bg-teal-600 hover:bg-teal-700"
               }`}
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
               </svg>
               Add Item
             </button>
@@ -488,11 +526,23 @@ export function StockPage() {
             <button
               onClick={() => setIsBatchUploadModalOpen(true)}
               className={`px-4 py-2 rounded-lg font-medium text-white text-lg flex items-center gap-2 transition-all ${
-                isDark ? "bg-indigo-600 hover:bg-indigo-700" : "bg-indigo-600 hover:bg-indigo-700"
+                isDark
+                  ? "bg-indigo-600 hover:bg-indigo-700"
+                  : "bg-indigo-600 hover:bg-indigo-700"
               }`}
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                />
               </svg>
               Batch Upload
             </button>
@@ -503,10 +553,14 @@ export function StockPage() {
         {selectedProducts.size > 0 && (
           <div
             className={`px-6 py-3 border-b flex items-center justify-between ${
-              isDark ? "bg-blue-500/10 border-gray-800" : "bg-blue-50 border-gray-100"
+              isDark
+                ? "bg-blue-500/10 border-gray-800"
+                : "bg-blue-50 border-gray-100"
             }`}
           >
-            <span className={`text-lg ${isDark ? "text-blue-400" : "text-blue-700"}`}>
+            <span
+              className={`text-lg ${isDark ? "text-blue-400" : "text-blue-700"}`}
+            >
               {selectedProducts.size} item(s) selected
             </span>
             <button
@@ -517,8 +571,18 @@ export function StockPage() {
                   : "bg-red-100 text-red-600 hover:bg-red-200"
               }`}
             >
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                />
               </svg>
               Delete Selected
             </button>
@@ -528,11 +592,30 @@ export function StockPage() {
         {/* Loading State */}
         {isLoading ? (
           <div className="py-12 flex flex-col items-center justify-center">
-            <svg className={`w-12 h-12 animate-spin mb-4 ${isDark ? "text-blue-500" : "text-blue-600"}`} fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            <svg
+              className={`w-12 h-12 animate-spin mb-4 ${isDark ? "text-blue-500" : "text-blue-600"}`}
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
             </svg>
-            <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>Loading products...</p>
+            <p
+              className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}
+            >
+              Loading products...
+            </p>
           </div>
         ) : (
           <>
@@ -541,7 +624,9 @@ export function StockPage() {
               <table className="w-full">
                 <thead
                   className={`text-xs uppercase tracking-wider ${
-                    isDark ? "bg-black/50 text-gray-400" : "bg-gray-50 text-gray-500"
+                    isDark
+                      ? "bg-black/50 text-gray-400"
+                      : "bg-gray-50 text-gray-500"
                   }`}
                 >
                   <tr>
@@ -549,17 +634,32 @@ export function StockPage() {
                       <input
                         aria-label="Select all products"
                         type="checkbox"
-                        checked={products.length > 0 && selectedProducts.size === products.length}
+                        checked={
+                          products.length > 0 &&
+                          selectedProducts.size === products.length
+                        }
                         onChange={handleSelectAll}
                         className="w-4.5 h-4.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
                     </th>
-                    <th className="px-6 py-4 text-left text-base font-semibold">Item Name</th>
-                    <th className="px-6 py-4 text-left text-base font-semibold">Quantity</th>
-                    <th className="px-6 py-4 text-left text-base font-semibold">Price</th>
-                    <th className="px-6 py-4 text-left text-base font-semibold">Category</th>
-                    <th className="px-6 py-4 text-left text-base font-semibold">Status</th>
-                    <th className="px-6 py-4 text-left text-base font-semibold">Action</th>
+                    <th className="px-6 py-4 text-left text-base font-semibold">
+                      Item Name
+                    </th>
+                    <th className="px-6 py-4 text-left text-base font-semibold">
+                      Quantity
+                    </th>
+                    <th className="px-6 py-4 text-left text-base font-semibold">
+                      Price
+                    </th>
+                    <th className="px-6 py-4 text-left text-base font-semibold">
+                      Category
+                    </th>
+                    <th className="px-6 py-4 text-left text-base font-semibold">
+                      Status
+                    </th>
+                    <th className="px-6 py-4 text-left text-base font-semibold">
+                      Action
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
@@ -579,19 +679,31 @@ export function StockPage() {
                           className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         />
                       </td>
-                      <td className={`px-6 py-4 text-lg font-medium ${isDark ? "text-white" : "text-gray-900"}`}>
+                      <td
+                        className={`px-6 py-4 text-lg font-medium ${isDark ? "text-white" : "text-gray-900"}`}
+                      >
                         {product.name}
                       </td>
-                      <td className={`px-6 py-4 text-lg ${isDark ? "text-gray-300" : "text-gray-700"}`}>
+                      <td
+                        className={`px-6 py-4 text-lg ${isDark ? "text-gray-300" : "text-gray-700"}`}
+                      >
                         {product.quantity} {product.unit}
                       </td>
-                      <td className={`px-6 py-4 text-lg font-semibold ${isDark ? "text-green-400" : "text-green-600"}`}>
+                      <td
+                        className={`px-6 py-4 text-lg font-semibold ${isDark ? "text-green-400" : "text-green-600"}`}
+                      >
                         ${product.price.toFixed(2)}
                       </td>
-                      <td className={`px-6 py-4  ${isDark ? "text-gray-300" : "text-gray-700"}`}>
-                        <span className={`px-2 py-1 rounded-full text-lg ${
-                          isDark ? "bg-gray-800 text-gray-300" : "bg-gray-100 text-gray-600"
-                        }`}>
+                      <td
+                        className={`px-6 py-4  ${isDark ? "text-gray-300" : "text-gray-700"}`}
+                      >
+                        <span
+                          className={`px-2 py-1 rounded-full text-lg ${
+                            isDark
+                              ? "bg-gray-800 text-gray-300"
+                              : "bg-gray-100 text-gray-600"
+                          }`}
+                        >
                           {product.category}
                         </span>
                       </td>
@@ -609,9 +721,24 @@ export function StockPage() {
                             }`}
                             title="View Details"
                           >
-                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            <svg
+                              className="w-6 h-6"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                              />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                              />
                             </svg>
                           </button>
                           <button
@@ -623,8 +750,18 @@ export function StockPage() {
                             }`}
                             title="Edit Product"
                           >
-                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            <svg
+                              className="w-6 h-6"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                              />
                             </svg>
                           </button>
                           <button
@@ -636,8 +773,18 @@ export function StockPage() {
                             }`}
                             title="Delete Product"
                           >
-                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            <svg
+                              className="w-6 h-6"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
                             </svg>
                           </button>
                         </div>
@@ -652,10 +799,14 @@ export function StockPage() {
             {products.length === 0 && !isLoading && (
               <div className="py-12 text-center">
                 <div className="text-7xl mb-4">📦</div>
-                <p className={`text-4xl font-medium ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                <p
+                  className={`text-4xl font-medium ${isDark ? "text-gray-400" : "text-gray-600"}`}
+                >
                   No products found
                 </p>
-                <p className={`text-lg mt-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
+                <p
+                  className={`text-lg mt-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}
+                >
                   Try adjusting your search or filter
                 </p>
               </div>
@@ -674,17 +825,6 @@ export function StockPage() {
       </div>
 
       {/* Modals */}
-      <ProductModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setEditingProduct(null);
-        }}
-        onSave={handleSaveProduct}
-        product={editingProduct}
-        isLoading={isActionLoading}
-      />
-
       <ProductDetailsModal
         isOpen={isDetailsModalOpen}
         onClose={() => {

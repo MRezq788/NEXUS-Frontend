@@ -1,27 +1,35 @@
-import { Navigate, useLocation } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { initializeApp } from 'firebase/app';
-import { usersApi } from '../../api';
-
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+import { Navigate, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { usersApi } from "../../api";
+import { auth } from "../../config/firbase";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requiredRole?: string | string[];
 }
 
-export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
+function normalizeRole(role: string): string {
+  const normalized = role
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
+
+  if (normalized === "app_user") {
+    return "business_owner";
+  }
+
+  if (normalized === "businessowner") {
+    return "business_owner";
+  }
+
+  return normalized;
+}
+
+export function ProtectedRoute({
+  children,
+  requiredRole,
+}: ProtectedRouteProps) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,9 +44,13 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
         if (requiredRole) {
           try {
             const response = await usersApi.getUserProfile();
-            setUserRole(response.data.role);
+            if (response.success && response.data?.role) {
+              setUserRole(response.data.role);
+            } else {
+              setUserRole(null);
+            }
           } catch (error) {
-            console.error('Error fetching user profile:', error);
+            console.error("Error fetching user profile:", error);
             setUserRole(null);
           }
         }
@@ -65,11 +77,11 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   }
 
   // Check role if required
-  if (requiredRole && userRole) {
-    const allowedRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
-    if (!allowedRoles.includes(userRole)) {
-      return <Navigate to="/unauthorized" replace />;
-    }
+  if (requiredRole) {
+    const allowedRoles = (
+      Array.isArray(requiredRole) ? requiredRole : [requiredRole]
+    ).map(normalizeRole);
+    const normalizedUserRole = userRole ? normalizeRole(userRole) : null;
   }
 
   return <>{children}</>;
