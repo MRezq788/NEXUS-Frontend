@@ -2,10 +2,36 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 import type { Order, OrderStatus } from "../config/types";
-import { getOrders, updateOrderStatus, acceptOrder, rejectOrder, cancelOrder } from "../services/warehouse.inventory.api";
+import {
+  getOrders,
+  updateOrderStatus,
+  acceptOrder,
+  rejectOrder,
+  cancelOrder,
+} from "../services/warehouse.inventory.api";
+
+function formatStatusLabel(status: string): string {
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+function formatVariantSummary(attributes?: Record<string, string>): string {
+  if (!attributes || Object.keys(attributes).length === 0) {
+    return "";
+  }
+
+  return Object.entries(attributes)
+    .map(([key, value]) => `${key}: ${value}`)
+    .join(" · ");
+}
 
 // Status badge component for orders - Updated to match StockPage style
-const OrderStatusBadge = ({ status, isDark }: { status: OrderStatus; isDark: boolean }) => {
+const OrderStatusBadge = ({
+  status,
+  isDark,
+}: {
+  status: OrderStatus;
+  isDark: boolean;
+}) => {
   const styles = {
     pending: isDark
       ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
@@ -22,8 +48,10 @@ const OrderStatusBadge = ({ status, isDark }: { status: OrderStatus; isDark: boo
   };
 
   return (
-    <span className={`px-3 py-1 rounded-full text-base font-medium ${styles[status]}`}>
-      {status}
+    <span
+      className={`px-3 py-1 rounded-full text-base font-medium ${styles[status]}`}
+    >
+      {formatStatusLabel(status)}
     </span>
   );
 };
@@ -84,32 +112,70 @@ const ConfirmationModal = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div
         className={`w-full max-w-md rounded-2xl p-6 ${
-          isDark ? "bg-[#18191b] border border-gray-800" : "bg-white border border-gray-200"
+          isDark
+            ? "bg-[#18191b] border border-gray-800"
+            : "bg-white border border-gray-200"
         }`}
       >
         <div className="flex flex-col items-center text-center">
-          <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${style.bg}`}>
+          <div
+            className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${style.bg}`}
+          >
             {type === "success" && (
-              <svg className={`w-8 h-8 ${style.icon}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              <svg
+                className={`w-8 h-8 ${style.icon}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             )}
             {type === "danger" && (
-              <svg className={`w-8 h-8 ${style.icon}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className={`w-8 h-8 ${style.icon}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             )}
             {type === "warning" && (
-              <svg className={`w-8 h-8 ${style.icon}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              <svg
+                className={`w-8 h-8 ${style.icon}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
               </svg>
             )}
           </div>
 
-          <h3 className={`text-xl font-bold mb-2 ${isDark ? "text-white" : "text-gray-900"}`}>
+          <h3
+            className={`text-xl font-bold mb-2 ${isDark ? "text-white" : "text-gray-900"}`}
+          >
             {title}
           </h3>
-          <p className={`text-sm mb-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+          <p
+            className={`text-sm mb-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}
+          >
             {message}
           </p>
 
@@ -133,8 +199,20 @@ const ConfirmationModal = ({
               {isLoading ? (
                 <>
                   <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      fill="none"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
                   Processing...
                 </>
@@ -169,20 +247,38 @@ const AlertModal = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div
         className={`w-full max-w-md rounded-2xl p-6 ${
-          isDark ? "bg-[#18191b] border border-gray-800" : "bg-white border border-gray-200"
+          isDark
+            ? "bg-[#18191b] border border-gray-800"
+            : "bg-white border border-gray-200"
         }`}
       >
         <div className="flex flex-col items-center text-center">
-          <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${isDark ? "bg-red-500/20" : "bg-red-100"}`}>
-            <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <div
+            className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${isDark ? "bg-red-500/20" : "bg-red-100"}`}
+          >
+            <svg
+              className="w-8 h-8 text-red-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
           </div>
 
-                    <h3 className={`text-xl font-bold mb-2 ${isDark ? "text-white" : "text-gray-900"}`}>
+          <h3
+            className={`text-xl font-bold mb-2 ${isDark ? "text-white" : "text-gray-900"}`}
+          >
             {title}
           </h3>
-          <p className={`text-sm mb-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+          <p
+            className={`text-sm mb-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}
+          >
             {message}
           </p>
 
@@ -202,13 +298,13 @@ const AlertModal = ({
   );
 };
 const getDelayClass = (ms: number) => {
-    // If your delay matches a standard Tailwind value, use it
-    const validDelays = [0, 75, 100, 150, 200, 300, 500, 700, 1000];
-      
-    // Find the closest valid delay (or just ensure your data matches these)
-    if (validDelays.includes(ms)) return `delay-${ms}`; 
-    return 'delay-75'; // Fallback
-  };
+  // If your delay matches a standard Tailwind value, use it
+  const validDelays = [0, 75, 100, 150, 200, 300, 500, 700, 1000];
+
+  // Find the closest valid delay (or just ensure your data matches these)
+  if (validDelays.includes(ms)) return `delay-${ms}`;
+  return "delay-75"; // Fallback
+};
 // Order Card Component - Updated with action buttons
 const OrderCard = ({
   order,
@@ -239,6 +335,13 @@ const OrderCard = ({
   // Determine which buttons to show based on status
   const showAcceptReject = order.status === "pending";
   const showDeliverCancel = order.status === "processing";
+  const totalUnits = order.products.reduce(
+    (sum, item) => sum + (Number(item.quantity) || 0),
+    0,
+  );
+  const ownerCanAccess =
+    order.ownerProductAccess ?? order.status === "completed";
+  const previewLines = order.products.slice(0, 2);
 
   return (
     <div
@@ -246,9 +349,10 @@ const OrderCard = ({
         relative overflow-hidden p-6 rounded-2xl 
         transition-all duration-500 hover:scale-[1.02]
         ${getDelayClass(delay)}
-        ${isDark
-          ? "bg-[#18191b] border border-gray-800"
-          : "bg-white border border-gray-100 shadow-lg shadow-gray-200/50"
+        ${
+          isDark
+            ? "bg-[#18191b] border border-gray-800"
+            : "bg-white border border-gray-100 shadow-lg shadow-gray-200/50"
         } 
         ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}
       `}
@@ -276,10 +380,14 @@ const OrderCard = ({
               </svg>
             </div>
             <div>
-              <p className={`text-sm font-medium ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+              <p
+                className={`text-sm font-medium ${isDark ? "text-gray-400" : "text-gray-500"}`}
+              >
                 Order ID
               </p>
-              <p className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
+              <p
+                className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
+              >
                 #{order.id.slice(-6).toUpperCase()}
               </p>
             </div>
@@ -287,18 +395,26 @@ const OrderCard = ({
 
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
-              <p className={`text-xs uppercase tracking-wider mb-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
+              <p
+                className={`text-xs uppercase tracking-wider mb-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}
+              >
                 Buyer
               </p>
-              <p className={`font-medium ${isDark ? "text-gray-300" : "text-gray-700"}`}>
+              <p
+                className={`font-medium ${isDark ? "text-gray-300" : "text-gray-700"}`}
+              >
                 {order.buyer}
               </p>
             </div>
             <div>
-              <p className={`text-xs uppercase tracking-wider mb-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
+              <p
+                className={`text-xs uppercase tracking-wider mb-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}
+              >
                 Total
               </p>
-              <p className={`text-xl font-bold ${isDark ? "text-green-400" : "text-green-600"}`}>
+              <p
+                className={`text-xl font-bold ${isDark ? "text-green-400" : "text-green-600"}`}
+              >
                 ${order.total.toFixed(2)}
               </p>
             </div>
@@ -307,9 +423,97 @@ const OrderCard = ({
           {/* Status Badge - Now prominently displayed */}
           <div className="flex items-center justify-between mb-4">
             <OrderStatusBadge status={order.status} isDark={isDark} />
-            <p className={`text-base ${isDark ? "text-gray-500" : "text-gray-400"}`}>
+            <p
+              className={`text-base ${isDark ? "text-gray-500" : "text-gray-400"}`}
+            >
               {new Date(order.createdAt).toLocaleDateString()}
             </p>
+          </div>
+
+          <div
+            className={`rounded-xl p-3 mb-4 ${
+              ownerCanAccess
+                ? isDark
+                  ? "bg-green-500/10 border border-green-500/20"
+                  : "bg-green-50 border border-green-100"
+                : isDark
+                  ? "bg-amber-500/10 border border-amber-500/20"
+                  : "bg-amber-50 border border-amber-100"
+            }`}
+          >
+            <p
+              className={`text-xs font-semibold uppercase tracking-wider mb-1 ${
+                ownerCanAccess
+                  ? isDark
+                    ? "text-green-300"
+                    : "text-green-700"
+                  : isDark
+                    ? "text-amber-300"
+                    : "text-amber-700"
+              }`}
+            >
+              Owner Product Access
+            </p>
+            <p
+              className={`text-sm ${
+                ownerCanAccess
+                  ? isDark
+                    ? "text-green-200"
+                    : "text-green-800"
+                  : isDark
+                    ? "text-amber-200"
+                    : "text-amber-800"
+              }`}
+            >
+              {ownerCanAccess
+                ? `Available${order.ownerProductAccessAt ? ` since ${new Date(order.ownerProductAccessAt).toLocaleString()}` : ""}`
+                : "Not available yet. Products unlock when order is marked Delivered."}
+            </p>
+          </div>
+
+          <div
+            className={`rounded-xl p-3 mb-4 ${
+              isDark
+                ? "bg-black/30 border border-white/5"
+                : "bg-gray-50 border border-gray-100"
+            }`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <p
+                className={`text-xs uppercase tracking-wider ${
+                  isDark ? "text-gray-500" : "text-gray-500"
+                }`}
+              >
+                Items
+              </p>
+              <p
+                className={`text-sm font-semibold ${isDark ? "text-gray-300" : "text-gray-700"}`}
+              >
+                {order.products.length} products · {totalUnits} units
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              {previewLines.map((item, idx) => (
+                <p
+                  key={`${item.productId}-${idx}`}
+                  className={`text-xs ${isDark ? "text-gray-400" : "text-gray-600"}`}
+                >
+                  {item.productName ||
+                    `Product ${item.productId.slice(-6).toUpperCase()}`}
+                  {` · Qty ${item.quantity}`}
+                  {item.variantAttributes
+                    ? ` · ${formatVariantSummary(item.variantAttributes)}`
+                    : ""}
+                </p>
+              ))}
+              {order.products.length > previewLines.length && (
+                <p
+                  className={`text-xs ${isDark ? "text-gray-500" : "text-gray-500"}`}
+                >
+                  +{order.products.length - previewLines.length} more item(s)
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
@@ -322,9 +526,24 @@ const OrderCard = ({
           }`}
           title="View Order Details"
         >
-          <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          <svg
+            className="w-8 h-8"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+            />
           </svg>
         </button>
       </div>
@@ -380,8 +599,10 @@ const OrderCard = ({
           </>
         )}
         {!showAcceptReject && !showDeliverCancel && (
-          <p className={`text-sm text-center w-full py-2 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
-            Order {order.status}
+          <p
+            className={`text-sm text-center w-full py-2 ${isDark ? "text-gray-500" : "text-gray-400"}`}
+          >
+            Order {formatStatusLabel(order.status)}
           </p>
         )}
       </div>
@@ -413,18 +634,38 @@ const Toast = ({
             ? "bg-green-600 text-white"
             : "bg-green-500 text-white"
           : isDark
-          ? "bg-red-600 text-white"
-          : "bg-red-500 text-white"
+            ? "bg-red-600 text-white"
+            : "bg-red-500 text-white"
       }`}
     >
       <div className="flex items-center gap-3">
         {type === "success" ? (
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M5 13l4 4L19 7"
+            />
           </svg>
         ) : (
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         )}
         <span className="font-medium">{message}</span>
@@ -497,10 +738,15 @@ export function OrdersPage() {
   const fetchOrders = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await getOrders(filterStatus === "All" ? undefined : filterStatus);
+      const data = await getOrders(
+        filterStatus === "All" ? undefined : filterStatus,
+      );
       setOrders(data);
     } catch (error) {
-      showToast(error instanceof Error ? error.message : "Failed to fetch orders", "error");
+      showToast(
+        error instanceof Error ? error.message : "Failed to fetch orders",
+        "error",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -526,10 +772,10 @@ export function OrdersPage() {
       onConfirm: async () => {
         setConfirmModal((prev) => ({ ...prev, isOpen: false }));
         setIsActionLoading(true);
-        
+
         try {
           const result = await acceptOrder(order.id);
-          
+
           if (result.success) {
             showToast("Order accepted successfully", "success");
             fetchOrders();
@@ -538,11 +784,15 @@ export function OrdersPage() {
             setAlertModal({
               isOpen: true,
               title: "Cannot Accept Order",
-              message: result.message || "Insufficient stock to fulfill this order.",
+              message:
+                result.message || "Insufficient stock to fulfill this order.",
             });
           }
         } catch (error) {
-          showToast(error instanceof Error ? error.message : "Failed to accept order", "error");
+          showToast(
+            error instanceof Error ? error.message : "Failed to accept order",
+            "error",
+          );
         } finally {
           setIsActionLoading(false);
         }
@@ -562,13 +812,16 @@ export function OrdersPage() {
       onConfirm: async () => {
         setConfirmModal((prev) => ({ ...prev, isOpen: false }));
         setIsActionLoading(true);
-        
+
         try {
           await rejectOrder(order.id);
           showToast("Order rejected successfully", "success");
           fetchOrders();
         } catch (error) {
-          showToast(error instanceof Error ? error.message : "Failed to reject order", "error");
+          showToast(
+            error instanceof Error ? error.message : "Failed to reject order",
+            "error",
+          );
         } finally {
           setIsActionLoading(false);
         }
@@ -588,13 +841,16 @@ export function OrdersPage() {
       onConfirm: async () => {
         setConfirmModal((prev) => ({ ...prev, isOpen: false }));
         setIsActionLoading(true);
-        
+
         try {
           await updateOrderStatus(order.id, "completed");
           showToast("Order marked as delivered", "success");
           fetchOrders();
         } catch (error) {
-          showToast(error instanceof Error ? error.message : "Failed to update order", "error");
+          showToast(
+            error instanceof Error ? error.message : "Failed to update order",
+            "error",
+          );
         } finally {
           setIsActionLoading(false);
         }
@@ -614,10 +870,10 @@ export function OrdersPage() {
       onConfirm: async () => {
         setConfirmModal((prev) => ({ ...prev, isOpen: false }));
         setIsActionLoading(true);
-        
+
         try {
           const result = await cancelOrder(order.id);
-          
+
           if (result.success) {
             showToast("Order cancelled and stock restored", "success");
             fetchOrders();
@@ -625,7 +881,10 @@ export function OrdersPage() {
             showToast(result.message || "Failed to cancel order", "error");
           }
         } catch (error) {
-          showToast(error instanceof Error ? error.message : "Failed to cancel order", "error");
+          showToast(
+            error instanceof Error ? error.message : "Failed to cancel order",
+            "error",
+          );
         } finally {
           setIsActionLoading(false);
         }
@@ -643,7 +902,9 @@ export function OrdersPage() {
           isVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"
         } transition-all duration-500`}
       >
-        <h2 className={`text-3xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+        <h2
+          className={`text-3xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
+        >
           Order Requests
         </h2>
         <p className={`mt-1 ${isDark ? "text-gray-500" : "text-gray-500"}`}>
@@ -654,17 +915,23 @@ export function OrdersPage() {
       {/* Filter Bar */}
       <div
         className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 rounded-2xl ${
-          isDark ? "bg-[#18191b] border border-gray-800" : "bg-white border border-gray-100 shadow-lg"
+          isDark
+            ? "bg-[#18191b] border border-gray-800"
+            : "bg-white border border-gray-100 shadow-lg"
         }`}
       >
         <div className="flex items-center gap-3">
-          <span className={`text-lg font-medium ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+          <span
+            className={`text-lg font-medium ${isDark ? "text-gray-400" : "text-gray-600"}`}
+          >
             Filter by Status:
           </span>
           <select
             aria-label="Filter orders by status"
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value as OrderStatus | "All")}
+            onChange={(e) =>
+              setFilterStatus(e.target.value as OrderStatus | "All")
+            }
             className={`px-3 py-2 rounded-lg border text-lg ${
               isDark
                 ? "bg-black border-gray-700 text-gray-300"
@@ -672,10 +939,10 @@ export function OrdersPage() {
             } focus:outline-none focus:border-blue-500`}
           >
             <option value="All">All Orders</option>
-            <option value="Pending">Pending</option>
-            <option value="Processing">Processing</option>
-            <option value="Completed">Completed</option>
-            <option value="Cancelled">Cancelled</option>
+            <option value="pending">Pending</option>
+            <option value="processing">Processing</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
           </select>
         </div>
         <p className={`text-2xl ${isDark ? "text-gray-400" : "text-gray-600"}`}>
@@ -686,11 +953,30 @@ export function OrdersPage() {
       {/* Orders Grid */}
       {isLoading ? (
         <div className="py-12 flex flex-col items-center justify-center">
-          <svg className={`w-12 h-12 animate-spin mb-4 ${isDark ? "text-blue-500" : "text-blue-600"}`} fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          <svg
+            className={`w-12 h-12 animate-spin mb-4 ${isDark ? "text-blue-500" : "text-blue-600"}`}
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            ></circle>
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
           </svg>
-          <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>Loading orders...</p>
+          <p
+            className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}
+          >
+            Loading orders...
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -714,10 +1000,14 @@ export function OrdersPage() {
       {!isLoading && orders.length === 0 && (
         <div className="py-12 text-center">
           <div className="text-7xl mb-4">📋</div>
-          <p className={`text-4xl font-medium ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+          <p
+            className={`text-4xl font-medium ${isDark ? "text-gray-400" : "text-gray-600"}`}
+          >
             No orders found
           </p>
-          <p className={`text-lg mt-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
+          <p
+            className={`text-lg mt-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}
+          >
             Try adjusting your filter
           </p>
         </div>

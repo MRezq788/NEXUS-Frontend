@@ -2,26 +2,17 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { initializeApp } from "firebase/app";
+
 import { useTheme } from "../contexts/ThemeContext";
 import { WarehouseDashboard } from "../components/dashboard/WarehouseDashboard";
 import { BusinessOwnerDashboard } from "../components/dashboard/BusinessOwnerDashboard";
 import { CashierDashboard } from "../components/dashboard/CashierDashboard";
 import { usersApi } from "../api";
-
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+import { auth } from "../config/firbase";
 
 export function Dashboard() {
   const [role, setRole] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const { isDark } = useTheme();
   const navigate = useNavigate();
@@ -29,6 +20,7 @@ export function Dashboard() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
+        setUserEmail(user.email || "");
         try {
           // Fetch user profile from API to get actual role
           const response = await usersApi.getUserProfile();
@@ -43,19 +35,19 @@ export function Dashboard() {
             }
           } else {
             // Fallback to email-based detection
-            if (user.email?.includes('warehouse')) {
-              setRole('warehouse');
+            if (user.email?.includes("warehouse")) {
+              setRole("warehouse");
             } else {
-              setRole('business_owner');
+              setRole("business_owner");
             }
           }
         } catch (error) {
-          console.error('Error fetching user profile:', error);
+          console.error("Error fetching user profile:", error);
           // Fallback to email-based detection
-          if (user.email?.includes('warehouse')) {
-            setRole('warehouse');
+          if (user.email?.includes("warehouse")) {
+            setRole("warehouse");
           } else {
-            setRole('business_owner');
+            setRole("business_owner");
           }
         }
       }
@@ -73,7 +65,7 @@ export function Dashboard() {
   }
 
   if (role === "warehouse") {
-    return <WarehouseDashboard isDark={isDark} />;
+    return <WarehouseDashboard isDark={isDark} userId={userEmail} />;
   }
 
   if (role === "cashier") {
@@ -81,5 +73,5 @@ export function Dashboard() {
     return <CashierDashboard isDark={isDark} />;
   }
 
-  return <BusinessOwnerDashboard isDark={isDark} />;
+  return <BusinessOwnerDashboard isDark={isDark} userId={userEmail} />;
 }

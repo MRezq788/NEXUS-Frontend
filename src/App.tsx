@@ -3,7 +3,6 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { POSProvider } from "./contexts/POSContext";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
 import { Dashboard } from "./pages/Dashboard";
-import { StockPage } from "./pages/WarehouseStockPage";
 import { LoginPage } from "./pages/LoginPage";
 import { UnauthorizedPage } from "./pages/UnauthorizedPage";
 import { Inventory } from "./pages/Inventory";
@@ -12,6 +11,9 @@ import { WarehouseShop } from "./pages/WarehouseShop";
 import { OrdersPage } from "./pages/WarehouseOrdersPage";
 import { OrderDetailsPage } from "./pages/WarehouseOrderDetailsPage";
 import { StaffManagement } from "./pages/StaffManagement";
+import { AddProduct } from "./pages/AddProduct";
+import { BusinessOwnerOrdersPage } from "./pages/BusinessOwnerOrdersPage.tsx";
+import { ReportsPage } from "./pages/ReportsPage.tsx";
 import { ProtectedRoute } from "./components/layout/ProtectedRoute";
 import {PointOfSale} from "./pages/PointOfSale.tsx";
 
@@ -74,7 +76,7 @@ function App() {
             element={
               <ProtectedRoute>
                 <DashboardLayout>
-                  <StockPage />
+                  <Inventory />
                 </DashboardLayout>
               </ProtectedRoute>
             }
@@ -86,6 +88,28 @@ function App() {
               <ProtectedRoute>
                 <DashboardLayout>
                   <OrdersPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/orders"
+            element={
+              <ProtectedRoute requiredRole="business_owner">
+                <DashboardLayout>
+                  <BusinessOwnerOrdersPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/reports"
+            element={
+              <ProtectedRoute requiredRole="business_owner">
+                <DashboardLayout>
+                  <ReportsPage />
                 </DashboardLayout>
               </ProtectedRoute>
             }
@@ -117,6 +141,26 @@ function App() {
               <ProtectedRoute requiredRole="business_owner">
                 <DashboardLayout>
                   <StaffManagement />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/inventory/add"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <AddProduct />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/inventory/edit/:id"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <AddProduct />
                 </DashboardLayout>
               </ProtectedRoute>
             }
