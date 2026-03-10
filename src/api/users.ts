@@ -9,7 +9,9 @@ export interface Product {
 export interface Cashier {
   id: string;
   name: string;
-  totalSales: number;
+  email?: string;
+  totalSold?: number;
+  totalSales?: number;
 }
 
 export interface ChartData {
@@ -40,21 +42,30 @@ export const usersApi = {
   },
 
   getMostSoldProducts: async (userId: string, range?: number) => {
-    return fetchApi<{ mostSoldProducts: Product[] }>(`/users/most-sold-products/${userId}`, {
-      params: { range },
-    });
+    return fetchApi<{ mostSoldProducts: Product[] }>(
+      `/users/most-sold-products/${userId}`,
+      {
+        params: { range },
+      },
+    );
   },
 
   getSoldTotalSpecificDay: async (userId: string, date: string) => {
-    return fetchApi<{ totalSold: number }>(`/users/sold-total/${userId}/specific-day`, {
-      params: { date },
-    });
+    return fetchApi<{ totalSold: number }>(
+      `/users/sold-total/${userId}/specific-day`,
+      {
+        params: { date },
+      },
+    );
   },
 
   getMostSellingCashiers: async (userId: string, range?: number) => {
-    return fetchApi<{ topCashiers: Cashier[] }>(`/users/most-selling-cashiers/${userId}`, {
-      params: { range },
-    });
+    return fetchApi<{ topCashiers: Cashier[] }>(
+      `/users/most-selling-cashiers/${userId}`,
+      {
+        params: { range },
+      },
+    );
   },
 
   getRevenue: async (userId: string, period?: "week" | "month" | "year") => {
@@ -63,39 +74,75 @@ export const usersApi = {
     });
   },
 
-  getRevenueGrowth: async (userId: string, period?: "week" | "month" | "year") => {
-    return fetchApi<{ growth: { currentPeriodTotal: number; previousPeriodTotal: number; growth: number } }>(`/users/revenue-growth/${userId}`, {
+  getRevenueGrowth: async (
+    userId: string,
+    period?: "week" | "month" | "year",
+  ) => {
+    return fetchApi<{
+      growth: {
+        currentPeriodTotal: number;
+        previousPeriodTotal: number;
+        growth: number;
+      };
+    }>(`/users/revenue-growth/${userId}`, {
       params: { period },
     });
   },
 
-  getTotalOrdersPeriod: async (userId: string, period?: "week" | "month" | "year") => {
-    return fetchApi<{ totalOrders: number }>(`/users/total-orders-period/${userId}`, {
-      params: { period },
-    });
+  getTotalOrdersPeriod: async (
+    userId: string,
+    period?: "week" | "month" | "year",
+  ) => {
+    return fetchApi<{ totalOrders: number }>(
+      `/users/total-orders-period/${userId}`,
+      {
+        params: { period },
+      },
+    );
   },
 
-  getTotalRevenuePeriod: async (userId: string, period?: "week" | "month" | "year") => {
-    return fetchApi<{ totalRevenue: number }>(`/users/total-revenue-period/${userId}`, {
-      params: { period },
-    });
+  getTotalRevenuePeriod: async (
+    userId: string,
+    period?: "week" | "month" | "year",
+  ) => {
+    return fetchApi<{ totalRevenue: number }>(
+      `/users/total-revenue-period/${userId}`,
+      {
+        params: { period },
+      },
+    );
   },
 
   getRecentOrders: async (userId: string, limit?: number) => {
-    return fetchApi<{ recentOrders: { id: string; total: number; type: string; createdAt: Date }[] }>(`/users/recent-orders/${userId}`, {
+    return fetchApi<{
+      recentOrders: {
+        id: string;
+        total: number;
+        type: string;
+        createdAt: Date | string;
+      }[];
+    }>(`/users/recent-orders/${userId}`, {
       params: { limit },
     });
   },
 
   createCashier: async (name: string, email: string, password: string) => {
-    return fetchApi<{ uid: string; email: string; name: string }>(`/users/cashiers`, {
-      method: "POST",
-      body: { name, email, password },
-    });
+    return fetchApi<{ uid: string; email: string; name: string }>(
+      `/users/cashiers`,
+      {
+        method: "POST",
+        body: { name, email, password },
+      },
+    );
   },
 
   getUserProfile: async () => {
-    return fetchApi<{ email: string; name: string; role: string; profileImageUrl?: string }>(`/users/profile`);
+    return fetchApi<{
+      email: string;
+      name: string;
+      role: string;
+      profileImageUrl?: string;
+    }>(`/users/profile`);
   },
 
   getCashiers: async () => {
@@ -108,7 +155,7 @@ export const usersApi = {
         businessOwnerId: string;
         createdAt?: unknown;
         profileImageUrl?: string;
-      }>
+      }>;
     }>(`/users/cashiers`);
   },
 };

@@ -2,12 +2,13 @@ import { useState, useEffect, useCallback } from "react";
 import { StatCard } from "./StatCard";
 import { ChartPlaceholder } from "./ChartPlaceholder";
 import { usersApi } from "../../api";
-import type { Product } from "../../api";
+import type { Product, Cashier } from "../../api";
 import type { TimePeriod, ChartData } from "./ChartPlaceholder";
 import ListView from "./ListView";
 
 interface BusinessOwnerDashboardProps {
   isDark: boolean;
+  userId: string;
 }
 
 interface ActivityData {
@@ -19,13 +20,14 @@ interface ActivityData {
 
 export const BusinessOwnerDashboard = ({
   isDark,
+  userId,
 }: BusinessOwnerDashboardProps) => {
   const [chartPeriod, setChartPeriod] = useState<TimePeriod>("week");
   const [chartData, setChartData] = useState<ChartData[]>();
   const [isLoading, setIsLoading] = useState(false);
-  const [userId, setUserId] = useState<string>("");
   const [topProducts, setTopProducts] = useState<ActivityData[]>([]);
   const [topCashiers, setTopCashiers] = useState<ActivityData[]>([]);
+  const [ownedSites, setOwnedSites] = useState<ActivityData[]>([]);
   const [totalSold, setTotalSold] = useState<number>(0);
   const [totalBought, setTotalBought] = useState<number>(0);
   const [periodTotal, setPeriodTotal] = useState<number>(0);
@@ -33,30 +35,12 @@ export const BusinessOwnerDashboard = ({
   const [orderCount, setOrderCount] = useState<number>(0);
   const [recentOrders, setRecentOrders] = useState<ActivityData[]>([]);
 
-  useEffect(() => {
-    const getUser = async () => {
-      const { getAuth } = await import("firebase/auth");
-      const { initializeApp } = await import("firebase/app");
-
-      const firebaseConfig = {
-        apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-        authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-        projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-        storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-        messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-        appId: import.meta.env.VITE_FIREBASE_APP_ID,
-      };
-
-      const app = initializeApp(firebaseConfig);
-      const auth = getAuth(app);
-      const user = auth.currentUser;
-
-      if (user) {
-        setUserId(user.email || "");
-      }
-    };
-
-    getUser();
+  const formatCurrency = useCallback((value: number) => {
+    return new Intl.NumberFormat("en-EG", {
+      style: "currency",
+      currency: "EGP",
+      maximumFractionDigits: 0,
+    }).format(value);
   }, []);
 
   const fetchRevenueData = useCallback(
@@ -66,8 +50,6 @@ export const BusinessOwnerDashboard = ({
       try {
         setIsLoading(true);
         const response = await usersApi.getRevenue(userId, period);
-        console.log(response);
-
         if (response.success && response.data?.data) {
           setChartData(response.data.data);
         }
@@ -89,10 +71,11 @@ export const BusinessOwnerDashboard = ({
       console.log(response);
 
       if (response.success && response.data?.mostSoldProducts) {
-        const products: any[] = response.data.mostSoldProducts.map(
+        const products: ActivityData[] = response.data.mostSoldProducts.map(
           (product: Product, index: number) => ({
             title: product.name,
-            icon: "box",
+            time: `Stock: ${product.quantity ?? 0}`,
+            icon: "orders",
             variant: index === 0 ? "success" : "default",
           }),
         );
@@ -108,13 +91,11 @@ export const BusinessOwnerDashboard = ({
 
     try {
       const response = await usersApi.getMostSellingCashiers(userId, 5);
-      console.log(response);
-
       if (response.success && response.data?.topCashiers) {
-        const cashiers: any[] = response.data.topCashiers.map(
-          (cashier: any, index: number) => ({
+        const cashiers: ActivityData[] = response.data.topCashiers.map(
+          (cashier: Cashier, index: number) => ({
             title: cashier.name,
-            time: `${cashier.email} - ${cashier.totalSold} EGP`,
+            time: `${cashier.email ?? "No email"} - ${(cashier.totalSold ?? cashier.totalSales ?? 0).toLocaleString()} EGP`,
             icon: "money",
             variant: index === 0 ? "success" : "default",
           }),
@@ -131,8 +112,6 @@ export const BusinessOwnerDashboard = ({
 
     try {
       const response = await usersApi.getSoldTotal(userId);
-      console.log(response);
-
       if (response.success && response.data?.totalSold !== undefined) {
         setTotalSold(response.data.totalSold);
       }
@@ -146,8 +125,6 @@ export const BusinessOwnerDashboard = ({
 
     try {
       const response = await usersApi.getBoughtTotal(userId);
-      console.log(response);
-
       if (response.success && response.data?.totalBought !== undefined) {
         setTotalBought(response.data.totalBought);
       }
@@ -167,8 +144,6 @@ export const BusinessOwnerDashboard = ({
             usersApi.getRevenueGrowth(userId, period),
             usersApi.getTotalOrdersPeriod(userId, period),
           ]);
-        console.log(revenueResponse, growthResponse, ordersResponse);
-
         if (
           revenueResponse.success &&
           revenueResponse.data?.totalRevenue !== undefined
@@ -201,13 +176,11 @@ export const BusinessOwnerDashboard = ({
 
     try {
       const response = await usersApi.getRecentOrders(userId, 4);
-      console.log(response);
-
       if (response.success && response.data?.recentOrders) {
         const orders: ActivityData[] = response.data.recentOrders.map(
           (order) => ({
             title: `Order #${order.id.slice(0, 8)}`,
-            time: `${order.total} EGP - ${order.type === "sold" ? "Sold" : "Bought"}`,
+            time: `${order.total.toLocaleString()} EGP - ${order.type === "sold" ? "Sold" : "Bought"}`,
             icon: order.type === "sold" ? "money" : "orders",
             variant: order.type === "sold" ? "success" : ("warning" as const),
           }),
@@ -219,69 +192,76 @@ export const BusinessOwnerDashboard = ({
     }
   }, [userId]);
 
-  useEffect(() => {
-    if (userId) {
-      fetchRevenueData(chartPeriod);
-      fetchTopProducts();
-      fetchTopCashiers();
-      fetchSoldTotal();
-      fetchBoughtTotal();
-      fetchPeriodStats(chartPeriod);
-      fetchRecentOrders();
+  const fetchOwnedSites = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      const response = await usersApi.getOwnedSites(userId);
+
+      if (response.success && response.data?.ownedSites) {
+        const sites: ActivityData[] = response.data.ownedSites
+          .slice(0, 5)
+          .map((siteId, index) => ({
+            title: siteId,
+            time: "Connected site",
+            icon: "users",
+            variant: index === 0 ? "success" : "default",
+          }));
+        setOwnedSites(sites);
+      }
+    } catch (error) {
+      console.error("Failed to fetch owned sites:", error);
     }
+  }, [userId]);
+
+  const refreshDashboardData = useCallback(async () => {
+    if (!userId) return;
+
+    await Promise.all([
+      fetchRevenueData(chartPeriod),
+      fetchTopProducts(),
+      fetchTopCashiers(),
+      fetchSoldTotal(),
+      fetchBoughtTotal(),
+      fetchPeriodStats(chartPeriod),
+      fetchRecentOrders(),
+      fetchOwnedSites(),
+    ]);
   }, [
     chartPeriod,
-    userId,
-    fetchRevenueData,
-    fetchTopProducts,
-    fetchTopCashiers,
-    fetchSoldTotal,
     fetchBoughtTotal,
+    fetchOwnedSites,
     fetchPeriodStats,
     fetchRecentOrders,
+    fetchRevenueData,
+    fetchSoldTotal,
+    fetchTopCashiers,
+    fetchTopProducts,
+    userId,
   ]);
+
+  useEffect(() => {
+    if (userId) {
+      refreshDashboardData();
+    }
+  }, [chartPeriod, refreshDashboardData, userId]);
 
   const handlePeriodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const period = e.target.value as TimePeriod;
     setChartPeriod(period);
   };
 
-  const activities = [
-    {
-      title: "New order #8921 placed",
-      time: "5 minutes ago",
-      icon: "orders",
-      variant: "success" as const,
-    },
-    {
-      title: "Payment received $1,250",
-      time: "30 minutes ago",
-      icon: "money",
-      variant: "success" as const,
-    },
-    {
-      title: "Customer feedback received",
-      time: "2 hours ago",
-      icon: "star",
-      variant: "default" as const,
-    },
-    {
-      title: "Inventory restocked",
-      time: "3 hours ago",
-      icon: "box",
-      variant: "default" as const,
-    },
-  ];
+  const netPosition = totalSold - totalBought;
 
   return (
     <div className="space-y-8">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <StatCard
           title="Total Revenue"
-          value={`$${totalSold.toLocaleString()}`}
+          value={formatCurrency(totalSold)}
           icon="money"
-          trend="Total sales"
-          trendValue={0}
+          trend="All-time sales"
+          trendValue={totalSold}
           isDark={isDark}
           delay={100}
           width="full"
@@ -290,15 +270,27 @@ export const BusinessOwnerDashboard = ({
         />
         <StatCard
           title="Total Expenses"
-          value={`$${totalBought.toLocaleString()}`}
+          value={formatCurrency(totalBought)}
           icon="orders"
-          trend="Total purchases"
-          trendValue={0}
+          trend="Warehouse purchases"
+          trendValue={-1}
           isDark={isDark}
           delay={200}
           width="full"
           height="h-56"
           color="orange"
+        />
+        <StatCard
+          title="Net Position"
+          value={formatCurrency(netPosition)}
+          icon="chart"
+          trend="Revenue - expenses"
+          trendValue={netPosition}
+          isDark={isDark}
+          delay={300}
+          width="full"
+          height="h-56"
+          color={netPosition >= 0 ? "blue" : "red"}
         />
       </div>
 
@@ -338,13 +330,16 @@ export const BusinessOwnerDashboard = ({
                 <option value="year">Year</option>
               </select>
               <button
+                onClick={() => {
+                  void refreshDashboardData();
+                }}
                 className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all ${
                   isDark
                     ? "bg-blue-600 hover:bg-blue-500 text-white"
                     : "bg-blue-600 hover:bg-blue-700 text-white"
                 }`}
               >
-                Export
+                Refresh
               </button>
             </div>
           </div>
@@ -360,7 +355,7 @@ export const BusinessOwnerDashboard = ({
               <p
                 className={`text-2xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
               >
-                ${(periodTotal / 1000).toFixed(1)}K
+                {formatCurrency(periodTotal)}
               </p>
               <p
                 className={`text-sm ${isDark ? "text-gray-500" : "text-gray-500"}`}
@@ -390,7 +385,7 @@ export const BusinessOwnerDashboard = ({
               <p
                 className={`text-2xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
               >
-                {orderCount > 0 ? orderCount : "-"}
+                {orderCount}
               </p>
               <p
                 className={`text-sm ${isDark ? "text-gray-500" : "text-gray-500"}`}
@@ -407,8 +402,8 @@ export const BusinessOwnerDashboard = ({
               ? recentOrders
               : [
                   {
-                    title: "Loading...",
-                    time: "",
+                    title: "No orders yet",
+                    time: "Your latest orders will appear here",
                     icon: "orders",
                     variant: "default" as const,
                   },
@@ -436,7 +431,7 @@ export const BusinessOwnerDashboard = ({
                 ]
           }
           title="Top Selling Products"
-          subtitle="Most popular items in your store"
+          subtitle="Best sellers in your business"
           height="h-[28rem]"
         />
         <ListView
@@ -459,9 +454,20 @@ export const BusinessOwnerDashboard = ({
         />
         <ListView
           isDark={isDark}
-          activities={activities}
-          title="Top Selling websites"
-          subtitle="Websites with highest sales"
+          activities={
+            ownedSites.length > 0
+              ? ownedSites
+              : [
+                  {
+                    title: "No connected sites",
+                    time: "Add sites to monitor channel performance",
+                    icon: "users",
+                    variant: "default" as const,
+                  },
+                ]
+          }
+          title="Owned Sites"
+          subtitle="Sales channels linked to your account"
           height="h-[28rem]"
         />
       </div>

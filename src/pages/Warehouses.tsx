@@ -46,28 +46,74 @@ const IconComponent = ({ name, isDark }: { name: string; isDark: boolean }) => {
 
   const icons: Record<string, React.ReactElement> = {
     search: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2}
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+        />
       </svg>
     ),
     filter: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2}
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+        />
       </svg>
     ),
     chevronLeft: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2}
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M15 19l-7-7 7-7"
+        />
       </svg>
     ),
     chevronRight: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2}
+      >
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
       </svg>
     ),
     warehouse: (
-      <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2 20h20M4 20V8l8-5 8 5v12M9 20v-5h6v5M9 12h.01M15 12h.01" />
+      <svg
+        className="w-10 h-10"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke={color}
+        strokeWidth={1.5}
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M2 20h20M4 20V8l8-5 8 5v12M9 20v-5h6v5M9 12h.01M15 12h.01"
+        />
       </svg>
     ),
   };
@@ -131,7 +177,14 @@ export function Warehouses() {
         if (debouncedSearch) params.set("search", debouncedSearch);
         if (categoryFilter !== "all") params.set("category", categoryFilter);
 
-        const res = await fetch(`${API_URL}/api/warehouses?${params.toString()}`);
+        const res = await fetch(
+          `${API_URL}/api/warehouses?${params.toString()}`,
+        );
+
+        if (!res.ok) {
+          throw new Error(`Server returned ${res.status} ${res.statusText}`);
+        }
+
         const json: ApiResponse = await res.json();
 
         if (!json.success) {
@@ -148,7 +201,7 @@ export function Warehouses() {
         setLoading(false);
       }
     },
-    [debouncedSearch, categoryFilter]
+    [debouncedSearch, categoryFilter],
   );
 
   useEffect(() => {
@@ -168,7 +221,8 @@ export function Warehouses() {
     if (cursorStack.length === 0) return;
     const newStack = [...cursorStack];
     newStack.pop();
-    const prevCursor = newStack.length > 0 ? newStack[newStack.length - 1] : undefined;
+    const prevCursor =
+      newStack.length > 0 ? newStack[newStack.length - 1] : undefined;
     setCursorStack(newStack);
     setCurrentPage((p) => p - 1);
     fetchData(prevCursor);
@@ -184,7 +238,8 @@ export function Warehouses() {
 
   // ── Filter label ───────────────────────────────────────────────────────────
 
-  const filterLabel = categoryFilter === "all" ? "All Categories" : categoryFilter;
+  const filterLabel =
+    categoryFilter === "all" ? "All Categories" : categoryFilter;
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -192,7 +247,9 @@ export function Warehouses() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className={`text-3xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+        <h2
+          className={`text-3xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
+        >
           Warehouses
         </h2>
         <p className={`mt-1 ${isDark ? "text-gray-500" : "text-gray-500"}`}>
@@ -243,13 +300,20 @@ export function Warehouses() {
               stroke="currentColor"
               strokeWidth={2}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M19 9l-7 7-7-7"
+              />
             </svg>
           </button>
 
           {showFilterDropdown && (
             <>
-              <div className="fixed inset-0 z-10" onClick={() => setShowFilterDropdown(false)} />
+              <div
+                className="fixed inset-0 z-10"
+                onClick={() => setShowFilterDropdown(false)}
+              />
               <div
                 className={`absolute right-0 mt-2 w-48 rounded-xl z-20 overflow-hidden shadow-lg ${
                   isDark
@@ -268,8 +332,8 @@ export function Warehouses() {
                         ? "bg-blue-600/20 text-blue-400"
                         : "bg-blue-50 text-blue-600"
                       : isDark
-                      ? "text-gray-300 hover:bg-[#2b2c2e]"
-                      : "text-gray-700 hover:bg-gray-50"
+                        ? "text-gray-300 hover:bg-[#2b2c2e]"
+                        : "text-gray-700 hover:bg-gray-50"
                   }`}
                 >
                   All Categories
@@ -287,8 +351,8 @@ export function Warehouses() {
                           ? "bg-blue-600/20 text-blue-400"
                           : "bg-blue-50 text-blue-600"
                         : isDark
-                        ? "text-gray-300 hover:bg-[#2b2c2e]"
-                        : "text-gray-700 hover:bg-gray-50"
+                          ? "text-gray-300 hover:bg-[#2b2c2e]"
+                          : "text-gray-700 hover:bg-gray-50"
                     }`}
                   >
                     {cat}
@@ -307,13 +371,21 @@ export function Warehouses() {
             <div
               key={i}
               className={`rounded-2xl overflow-hidden ${
-                isDark ? "bg-[#18191b]" : "bg-white border border-gray-100 shadow-lg shadow-gray-200/50"
+                isDark
+                  ? "bg-[#18191b]"
+                  : "bg-white border border-gray-100 shadow-lg shadow-gray-200/50"
               }`}
             >
-              <div className={`h-40 animate-pulse ${isDark ? "bg-gray-800" : "bg-gray-200"}`} />
+              <div
+                className={`h-40 animate-pulse ${isDark ? "bg-gray-800" : "bg-gray-200"}`}
+              />
               <div className="p-4 space-y-3">
-                <div className={`h-4 w-2/3 rounded animate-pulse ${isDark ? "bg-gray-800" : "bg-gray-200"}`} />
-                <div className={`h-3 w-1/3 rounded animate-pulse ${isDark ? "bg-gray-800" : "bg-gray-200"}`} />
+                <div
+                  className={`h-4 w-2/3 rounded animate-pulse ${isDark ? "bg-gray-800" : "bg-gray-200"}`}
+                />
+                <div
+                  className={`h-3 w-1/3 rounded animate-pulse ${isDark ? "bg-gray-800" : "bg-gray-200"}`}
+                />
               </div>
             </div>
           ))}
@@ -329,7 +401,9 @@ export function Warehouses() {
           </button>
         </div>
       ) : warehouses.length === 0 ? (
-        <div className={`text-center py-16 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
+        <div
+          className={`text-center py-16 ${isDark ? "text-gray-500" : "text-gray-400"}`}
+        >
           No warehouses found
         </div>
       ) : (
@@ -355,7 +429,9 @@ export function Warehouses() {
                     : "bg-gradient-to-br from-gray-100 to-gray-200"
                 }`}
               >
-                <div className={`opacity-40 group-hover:opacity-60 transition-opacity`}>
+                <div
+                  className={`opacity-40 group-hover:opacity-60 transition-opacity`}
+                >
                   <IconComponent name="warehouse" isDark={isDark} />
                 </div>
               </div>
@@ -369,9 +445,19 @@ export function Warehouses() {
                 >
                   {warehouse.name}
                 </h3>
+                <p
+                  className={`mt-1 text-xs truncate ${
+                    isDark ? "text-gray-400" : "text-gray-500"
+                  }`}
+                  title={warehouse.email}
+                >
+                  {warehouse.email}
+                </p>
                 <span
                   className={`inline-block mt-2 px-2.5 py-1 rounded-lg text-xs font-medium ${
-                    isDark ? "bg-black/40 text-gray-300" : "bg-gray-100 text-gray-600"
+                    isDark
+                      ? "bg-black/40 text-gray-300"
+                      : "bg-gray-100 text-gray-600"
                   }`}
                 >
                   {warehouse.category}
@@ -384,10 +470,10 @@ export function Warehouses() {
 
       {/* Pagination */}
       {!loading && !error && warehouses.length > 0 && (
-        <div
-          className={`flex items-center justify-between pt-2`}
-        >
-          <p className={`text-sm ${isDark ? "text-gray-500" : "text-gray-500"}`}>
+        <div className={`flex items-center justify-between pt-2`}>
+          <p
+            className={`text-sm ${isDark ? "text-gray-500" : "text-gray-500"}`}
+          >
             Page {currentPage}
           </p>
           <div className="flex items-center gap-2">
@@ -400,8 +486,8 @@ export function Warehouses() {
                     ? "bg-black/20 text-gray-600 cursor-not-allowed"
                     : "bg-gray-100 text-gray-300 cursor-not-allowed"
                   : isDark
-                  ? "bg-[#18191b] text-gray-300 hover:bg-[#2b2c2e] hover:text-white"
-                  : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
+                    ? "bg-[#18191b] text-gray-300 hover:bg-[#2b2c2e] hover:text-white"
+                    : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
               }`}
             >
               <IconComponent name="chevronLeft" isDark={isDark} />
@@ -416,8 +502,8 @@ export function Warehouses() {
                     ? "bg-black/20 text-gray-600 cursor-not-allowed"
                     : "bg-gray-100 text-gray-300 cursor-not-allowed"
                   : isDark
-                  ? "bg-[#18191b] text-gray-300 hover:bg-[#2b2c2e] hover:text-white"
-                  : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
+                    ? "bg-[#18191b] text-gray-300 hover:bg-[#2b2c2e] hover:text-white"
+                    : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
               }`}
             >
               Next

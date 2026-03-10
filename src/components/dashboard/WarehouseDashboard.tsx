@@ -2,11 +2,13 @@ import { useState, useEffect, useCallback } from "react";
 import { StatCard } from "./StatCard";
 import { ChartPlaceholder } from "./ChartPlaceholder";
 import { usersApi } from "../../api";
+import type { Product } from "../../api";
 import type { TimePeriod, ChartData } from "./ChartPlaceholder";
 import ListView from "./ListView";
 
 interface WarehouseDashboardProps {
   isDark: boolean;
+  userId: string;
 }
 
 interface ActivityData {
@@ -16,11 +18,15 @@ interface ActivityData {
   variant: "default" | "success" | "warning" | "error";
 }
 
-export const WarehouseDashboard = ({ isDark }: WarehouseDashboardProps) => {
+export const WarehouseDashboard = ({
+  isDark,
+  userId,
+}: WarehouseDashboardProps) => {
   const [chartPeriod, setChartPeriod] = useState<TimePeriod>("week");
   const [chartData, setChartData] = useState<ChartData[]>();
   const [isLoading, setIsLoading] = useState(false);
-  const [userId, setUserId] = useState<string>("");
+  const [topProducts, setTopProducts] = useState<ActivityData[]>([]);
+  const [insights, setInsights] = useState<ActivityData[]>([]);
   const [totalSold, setTotalSold] = useState<number>(0);
   const [totalBought, setTotalBought] = useState<number>(0);
   const [periodTotal, setPeriodTotal] = useState<number>(0);
@@ -28,30 +34,12 @@ export const WarehouseDashboard = ({ isDark }: WarehouseDashboardProps) => {
   const [orderCount, setOrderCount] = useState<number>(0);
   const [recentOrders, setRecentOrders] = useState<ActivityData[]>([]);
 
-  useEffect(() => {
-    const getUser = async () => {
-      const { getAuth } = await import("firebase/auth");
-      const { initializeApp } = await import("firebase/app");
-
-      const firebaseConfig = {
-        apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-        authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-        projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-        storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-        messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-        appId: import.meta.env.VITE_FIREBASE_APP_ID,
-      };
-
-      const app = initializeApp(firebaseConfig);
-      const auth = getAuth(app);
-      const user = auth.currentUser;
-
-      if (user) {
-        setUserId(user.email || "");
-      }
-    };
-
-    getUser();
+  const formatCurrency = useCallback((value: number) => {
+    return new Intl.NumberFormat("en-EG", {
+      style: "currency",
+      currency: "EGP",
+      maximumFractionDigits: 0,
+    }).format(value);
   }, []);
 
   const fetchRevenueData = useCallback(
@@ -152,7 +140,7 @@ export const WarehouseDashboard = ({ isDark }: WarehouseDashboardProps) => {
         const orders: ActivityData[] = response.data.recentOrders.map(
           (order) => ({
             title: `Order #${order.id.slice(0, 8)}`,
-            time: `${order.total} EGP - ${order.type === "sold" ? "Sold" : "Bought"}`,
+            time: `${order.total.toLocaleString()} EGP - ${order.type === "sold" ? "Sold" : "Bought"}`,
             icon: order.type === "sold" ? "money" : "orders",
             variant: order.type === "sold" ? "success" : ("warning" as const),
           }),
@@ -164,23 +152,85 @@ export const WarehouseDashboard = ({ isDark }: WarehouseDashboardProps) => {
     }
   }, [userId]);
 
-  useEffect(() => {
-    if (userId) {
-      fetchRevenueData(chartPeriod);
-      fetchSoldTotal();
-      fetchBoughtTotal();
-      fetchPeriodStats(chartPeriod);
-      fetchRecentOrders();
+  const fetchTopProducts = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      const response = await usersApi.getMostSoldProducts(userId, 5);
+
+      if (response.success && response.data?.mostSoldProducts) {
+        const products: ActivityData[] = response.data.mostSoldProducts.map(
+          (product: Product, index: number) => ({
+            title: product.name,
+            time: `Stock: ${product.quantity ?? 0}`,
+            icon: "orders",
+            variant: index === 0 ? "success" : "default",
+          }),
+        );
+        setTopProducts(products);
+      }
+    } catch (error) {
+      console.error("Failed to fetch top products:", error);
     }
+  }, [userId]);
+
+  const refreshDashboardData = useCallback(async () => {
+    if (!userId) return;
+
+    await Promise.all([
+      fetchRevenueData(chartPeriod),
+      fetchSoldTotal(),
+      fetchBoughtTotal(),
+      fetchPeriodStats(chartPeriod),
+      fetchRecentOrders(),
+      fetchTopProducts(),
+    ]);
   }, [
     chartPeriod,
-    userId,
-    fetchRevenueData,
-    fetchSoldTotal,
     fetchBoughtTotal,
     fetchPeriodStats,
     fetchRecentOrders,
+    fetchRevenueData,
+    fetchSoldTotal,
+    fetchTopProducts,
+    userId,
   ]);
+
+  useEffect(() => {
+    if (userId) {
+      refreshDashboardData();
+    }
+  }, [chartPeriod, refreshDashboardData, userId]);
+
+  useEffect(() => {
+    const netRevenue = totalSold - totalBought;
+    setInsights([
+      {
+        title: "Net Revenue",
+        time: formatCurrency(netRevenue),
+        icon: "chart",
+        variant: netRevenue >= 0 ? "success" : "warning",
+      },
+      {
+        title: "Period Orders",
+        time: `${orderCount} orders in selected ${chartPeriod}`,
+        icon: "orders",
+        variant: "default",
+      },
+      {
+        title: "Growth Rate",
+        time: `${growth > 0 ? "+" : ""}${growth}% vs previous period`,
+        icon: "money",
+        variant: growth >= 0 ? "success" : "warning",
+      },
+      {
+        title: "Purchasing Spend",
+        time: formatCurrency(totalBought),
+        icon: "box",
+        variant: "default",
+      },
+    ]);
+  }, [chartPeriod, formatCurrency, growth, orderCount, totalBought, totalSold]);
 
   const handlePeriodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const period = e.target.value as TimePeriod;
@@ -191,11 +241,11 @@ export const WarehouseDashboard = ({ isDark }: WarehouseDashboardProps) => {
     <div className="space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard
-          title="Total Stock"
-          value={`$${totalSold.toLocaleString()}`}
+          title="Total Sales"
+          value={formatCurrency(totalSold)}
           icon="box"
-          trend="Total stock value"
-          trendValue={0}
+          trend="All-time outbound value"
+          trendValue={totalSold}
           isDark={isDark}
           delay={100}
           width="full"
@@ -203,11 +253,11 @@ export const WarehouseDashboard = ({ isDark }: WarehouseDashboardProps) => {
           color="blue"
         />
         <StatCard
-          title="Total Revenue"
-          value={`$${periodTotal.toLocaleString()}`}
+          title="Period Revenue"
+          value={formatCurrency(periodTotal)}
           icon="money"
           trend={`This ${chartPeriod === "week" ? "Week" : chartPeriod === "month" ? "Month" : "Year"}`}
-          trendValue={0}
+          trendValue={periodTotal}
           isDark={isDark}
           delay={200}
           width="full"
@@ -215,11 +265,11 @@ export const WarehouseDashboard = ({ isDark }: WarehouseDashboardProps) => {
           color="green"
         />
         <StatCard
-          title="Pending Orders"
-          value={`$${totalBought.toLocaleString()}`}
+          title="Total Purchases"
+          value={formatCurrency(totalBought)}
           icon="orders"
-          trend="Pending orders value"
-          trendValue={0}
+          trend="Inbound procurement cost"
+          trendValue={-1}
           isDark={isDark}
           delay={300}
           width="full"
@@ -265,13 +315,16 @@ export const WarehouseDashboard = ({ isDark }: WarehouseDashboardProps) => {
                 <option value="year">Year</option>
               </select>
               <button
+                onClick={() => {
+                  void refreshDashboardData();
+                }}
                 className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all ${
                   isDark
                     ? "bg-blue-600 hover:bg-blue-500 text-white"
                     : "bg-blue-600 hover:bg-blue-700 text-white"
                 }`}
               >
-                Export
+                Refresh
               </button>
             </div>
           </div>
@@ -287,7 +340,7 @@ export const WarehouseDashboard = ({ isDark }: WarehouseDashboardProps) => {
               <p
                 className={`text-2xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
               >
-                ${(periodTotal / 1000).toFixed(1)}K
+                {formatCurrency(periodTotal)}
               </p>
               <p
                 className={`text-sm ${isDark ? "text-gray-500" : "text-gray-500"}`}
@@ -334,8 +387,8 @@ export const WarehouseDashboard = ({ isDark }: WarehouseDashboardProps) => {
               ? recentOrders
               : [
                   {
-                    title: "Loading...",
-                    time: "",
+                    title: "No orders yet",
+                    time: "Recent warehouse orders will appear here",
                     icon: "orders",
                     variant: "default" as const,
                   },
@@ -347,44 +400,42 @@ export const WarehouseDashboard = ({ isDark }: WarehouseDashboardProps) => {
           showGrowing
         />
       </div>
-      <div className="flex items-center gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <ListView
           isDark={isDark}
           activities={
-            recentOrders.length > 0
-              ? recentOrders
+            topProducts.length > 0
+              ? topProducts
               : [
                   {
-                    title: "Loading...",
-                    time: "",
-                    icon: "orders",
+                    title: "No sold products yet",
+                    time: "Top products will appear after sales",
+                    icon: "box",
                     variant: "default" as const,
                   },
                 ]
           }
-          title="Recent Orders"
-          subtitle="Your latest 5 orders"
+          title="Top Sold Products"
+          subtitle="Best performers from order history"
           height="h-[29rem]"
-          width="w-1/2"
         />
         <ListView
           isDark={isDark}
           activities={
-            recentOrders.length > 0
-              ? recentOrders
+            insights.length > 0
+              ? insights
               : [
                   {
-                    title: "Loading...",
-                    time: "",
-                    icon: "orders",
+                    title: "No insights yet",
+                    time: "Metrics insights will appear here",
+                    icon: "chart",
                     variant: "default" as const,
                   },
                 ]
           }
-          title="Recent Orders"
-          subtitle="Your latest 5 orders"
+          title="Operational Insights"
+          subtitle="Quick business snapshot"
           height="h-[29rem]"
-          width="w-1/2"
         />
       </div>
     </div>
