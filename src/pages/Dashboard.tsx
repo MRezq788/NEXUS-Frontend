@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
-import { onAuthStateChanged } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { initializeApp } from "firebase/app";
+
 import { useTheme } from "../contexts/ThemeContext";
 import { WarehouseDashboard } from "../components/dashboard/WarehouseDashboard";
 import { BusinessOwnerDashboard } from "../components/dashboard/BusinessOwnerDashboard";
@@ -12,6 +15,7 @@ export function Dashboard() {
   const [userEmail, setUserEmail] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const { isDark } = useTheme();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -21,7 +25,14 @@ export function Dashboard() {
           // Fetch user profile from API to get actual role
           const response = await usersApi.getUserProfile();
           if (response.success && response.data?.role) {
-            setRole(response.data.role);
+            const userRole = response.data.role;
+            setRole(userRole);
+
+            // Redirect cashiers to POS page instead of showing dashboard
+            if (userRole === 'cashier') {
+              navigate('/pos', { replace: true });
+              return;
+            }
           } else {
             // Fallback to email-based detection
             if (user.email?.includes("warehouse")) {
@@ -43,7 +54,7 @@ export function Dashboard() {
       setIsLoading(false);
     });
     return () => unsubscribe();
-  }, []);
+  }, [navigate]);
 
   if (isLoading) {
     return (
@@ -58,6 +69,7 @@ export function Dashboard() {
   }
 
   if (role === "cashier") {
+    // This should not be reached due to redirect above, but kept as fallback
     return <CashierDashboard isDark={isDark} />;
   }
 

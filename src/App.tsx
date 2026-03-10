@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { POSProvider } from "./contexts/POSContext";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
 import { Dashboard } from "./pages/Dashboard";
 import { LoginPage } from "./pages/LoginPage";
@@ -14,11 +15,13 @@ import { AddProduct } from "./pages/AddProduct";
 import { BusinessOwnerOrdersPage } from "./pages/BusinessOwnerOrdersPage.tsx";
 import { ReportsPage } from "./pages/ReportsPage.tsx";
 import { ProtectedRoute } from "./components/layout/ProtectedRoute";
+import {PointOfSale} from "./pages/PointOfSale.tsx";
 
 function App() {
   return (
-    <ThemeProvider>
-      <Router>
+    <POSProvider>
+      <ThemeProvider>
+        <Router>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/unauthorized" element={<UnauthorizedPage />} />
@@ -124,6 +127,15 @@ function App() {
           />
 
           <Route
+            path="/pos"
+            element={
+              <ProtectedRoute requiredRole="cashier">
+                <PointOfSale />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
             path="/staff-management"
             element={
               <ProtectedRoute requiredRole="business_owner">
@@ -156,6 +168,7 @@ function App() {
         </Routes>
       </Router>
     </ThemeProvider>
+    </POSProvider>
   );
 }
 
