@@ -50,7 +50,7 @@ export function ProductGrid({
             placeholder="Search products..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className={`w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all text-sm sm:text-base ${isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500' : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-500'}`}
+            className={`w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all text-sm sm:text-base ${isDark ? 'bg-[#1e1f23] border-[#2d2e33] text-white placeholder-gray-400 focus:border-blue-500' : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-500 shadow-sm'}`}
           />
         </div>
       </div>
@@ -61,9 +61,9 @@ export function ProductGrid({
           <button
             key={product.id}
             onClick={() => onProductClick(product)}
-            className={`rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4 hover:shadow-lg transition-all text-left group ${isDark ? 'bg-gray-700 hover:bg-gray-600' : 'bg-white hover:shadow-xl'}`}
+            className={`rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4 hover:shadow-lg transition-all text-left group border ${isDark ? 'bg-[#1e1f23] border-[#2d2e33] hover:bg-[#23252b]' : 'bg-white border-gray-100 shadow-sm hover:shadow-xl'}`}
           >
-            <div className={`aspect-square rounded-lg overflow-hidden mb-2 sm:mb-3 ${isDark ? 'bg-gray-600' : 'bg-gray-100'}`}>
+            <div className={`aspect-square rounded-lg overflow-hidden mb-2 sm:mb-3 ${isDark ? 'bg-[#18191b]' : 'bg-gray-100'}`}>
               <img
                 src={product.image_url || ''}
                 alt={product.name}
@@ -91,7 +91,7 @@ export function ProductGrid({
       {/* Empty State */}
       {filteredProducts.length === 0 && (
         <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mb-4 ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
+          <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mb-4 ${isDark ? 'bg-[#1e1f23]' : 'bg-gray-100'}`}>
             <Search className={`w-8 h-8 sm:w-10 sm:h-10 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
           </div>
           <p className={`text-sm sm:text-base font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>No products found</p>

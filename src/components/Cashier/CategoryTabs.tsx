@@ -44,8 +44,8 @@ export function CategoryTabs({
               isSelected
                 ? 'bg-blue-500 text-white shadow-lg'
                 : isDark
-                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 border border-gray-600'
-                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                ? 'bg-[#1e1f23] text-gray-300 hover:bg-[#23252b] border border-[#2d2e33]'
+                : 'bg-white text-gray-700 hover:bg-slate-50 border border-gray-100 shadow-sm'
             }`}
           >
             <Icon className="w-5 h-5 sm:w-6 sm:h-6 mb-1 sm:mb-2" />

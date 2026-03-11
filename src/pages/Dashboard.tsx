@@ -6,7 +6,6 @@ import { initializeApp } from "firebase/app";
 import { useTheme } from "../contexts/ThemeContext";
 import { WarehouseDashboard } from "../components/dashboard/WarehouseDashboard";
 import { BusinessOwnerDashboard } from "../components/dashboard/BusinessOwnerDashboard";
-import { CashierDashboard } from "../components/dashboard/CashierDashboard";
 import { usersApi } from "../api";
 import { auth } from "../config/firbase";
 
@@ -30,7 +29,7 @@ export function Dashboard() {
 
             // Redirect cashiers to POS page instead of showing dashboard
             if (userRole === 'cashier') {
-              navigate('/pos', { replace: true });
+              setRole("cashier");
               return;
             }
           } else {
@@ -66,11 +65,6 @@ export function Dashboard() {
 
   if (role === "warehouse") {
     return <WarehouseDashboard isDark={isDark} userId={userEmail} />;
-  }
-
-  if (role === "cashier") {
-    // This should not be reached due to redirect above, but kept as fallback
-    return <CashierDashboard isDark={isDark} />;
   }
 
   return <BusinessOwnerDashboard isDark={isDark} userId={userEmail} />;
