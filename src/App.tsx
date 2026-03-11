@@ -15,159 +15,191 @@ import { AddProduct } from "./pages/AddProduct";
 import { BusinessOwnerOrdersPage } from "./pages/BusinessOwnerOrdersPage.tsx";
 import { ReportsPage } from "./pages/ReportsPage.tsx";
 import { ProtectedRoute } from "./components/layout/ProtectedRoute";
-import {PointOfSale} from "./pages/PointOfSale.tsx";
+import { PointOfSale } from "./pages/PointOfSale.tsx";
+import { InventoryAllocation } from "./pages/InventoryAllocation";
+import { CashierInventory } from "./pages/CashierInventory.tsx";
+import { CashierOrders } from "./pages/CashierOrders.tsx";
 
 function App() {
   return (
     <POSProvider>
       <ThemeProvider>
         <Router>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/unauthorized" element={<UnauthorizedPage />} />
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <DashboardLayout>
-                  <Dashboard />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <Dashboard />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/dashboard/inventory"
-            element={
-              <ProtectedRoute>
-                <DashboardLayout>
-                  <Inventory />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/dashboard/inventory"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <Inventory />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/warehouses"
-            element={
-              <ProtectedRoute>
-                <DashboardLayout>
-                  <Warehouses />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/dashboard/inventory-allocation"
+              element={
+                <ProtectedRoute requiredRole="business_owner">
+                  <DashboardLayout>
+                    <InventoryAllocation />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/warehouses/shop"
-            element={
-              <ProtectedRoute>
-                <DashboardLayout>
-                  <WarehouseShop />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/warehouses"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <Warehouses />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
 
-          {/* New Stock Route for Warehouse Users */}
-          <Route
-            path="/dashboard/stock"
-            element={
-              <ProtectedRoute>
-                <DashboardLayout>
-                  <Inventory />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/warehouses/shop"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <WarehouseShop />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/dashboard/orders"
-            element={
-              <ProtectedRoute>
-                <DashboardLayout>
-                  <OrdersPage />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+            {/* New Stock Route for Warehouse Users */}
+            <Route
+              path="/dashboard/stock"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <Inventory />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/orders"
-            element={
-              <ProtectedRoute requiredRole="business_owner">
-                <DashboardLayout>
-                  <BusinessOwnerOrdersPage />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/dashboard/orders"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <OrdersPage />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/reports"
-            element={
-              <ProtectedRoute requiredRole="business_owner">
-                <DashboardLayout>
-                  <ReportsPage />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/orders"
+              element={
+                <ProtectedRoute requiredRole="business_owner">
+                  <DashboardLayout>
+                    <BusinessOwnerOrdersPage />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/dashboard/orders/:orderId"
-            element={
-              <ProtectedRoute>
-                <DashboardLayout>
-                  <OrderDetailsPage />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/reports"
+              element={
+                <ProtectedRoute requiredRole="business_owner">
+                  <DashboardLayout>
+                    <ReportsPage />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/pos"
-            element={
-              <ProtectedRoute requiredRole="cashier">
-                <PointOfSale />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/dashboard/orders/:orderId"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <OrderDetailsPage />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/staff-management"
-            element={
-              <ProtectedRoute requiredRole="business_owner">
-                <DashboardLayout>
-                  <StaffManagement />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard/inventory/add"
-            element={
-              <ProtectedRoute>
-                <DashboardLayout>
-                  <AddProduct />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard/inventory/edit/:id"
-            element={
-              <ProtectedRoute>
-                <DashboardLayout>
-                  <AddProduct />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </Router>
-    </ThemeProvider>
+            <Route
+              path="/pos"
+              element={
+                <ProtectedRoute requiredRole="cashier">
+                  <PointOfSale />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/cashier-inventory"
+              element={
+                <ProtectedRoute requiredRole="cashier">
+                  <CashierInventory />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/cashier-orders"
+              element={
+                <ProtectedRoute requiredRole="cashier">
+                  <CashierOrders />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/staff-management"
+              element={
+                <ProtectedRoute requiredRole="business_owner">
+                  <DashboardLayout>
+                    <StaffManagement />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/inventory/add"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <AddProduct />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/inventory/edit/:id"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <AddProduct />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </Router>
+      </ThemeProvider>
     </POSProvider>
   );
 }

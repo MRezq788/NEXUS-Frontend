@@ -1,7 +1,8 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import type { Product } from '../lib/database.types';
 
-export interface CartItem {
+interface CartItem {
   product: Product;
   quantity: number;
   notes?: string;

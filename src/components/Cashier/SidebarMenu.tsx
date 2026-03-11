@@ -1,5 +1,4 @@
 import {
-  X,
   ShoppingCart,
   FileText,
   Package,
@@ -9,36 +8,45 @@ import {
   Settings,
   LogOut,
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
-import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { getAuth, signOut } from 'firebase/auth';
+import { useNavigate, useLocation } from 'react-router-dom';
+import Logo from '../layout/Logo';
 
 interface SidebarMenuProps {
   isDark: boolean;
-  isOpen: boolean;
-  onClose: () => void;
+  isCollapsed: boolean;
+  onToggle: (collapsed: boolean) => void;
 }
 
-export function SidebarMenu({ isDark, isOpen, onClose }: SidebarMenuProps) {
-  const [userName, setUserName] = useState('Cashier');
-  const [userEmail, setUserEmail] = useState('');
+export function SidebarMenu({ isDark, isCollapsed, onToggle }: SidebarMenuProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const auth = getAuth();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUserName(user.displayName || user.email?.split('@')[0] || 'Cashier');
-        setUserEmail(user.email || '');
-        return;
+    let lastWidth = window.innerWidth;
+
+    const handleResize = () => {
+      const currentWidth = window.innerWidth;
+      const breakpoint = 1024;
+
+      if (lastWidth >= breakpoint && currentWidth < breakpoint) {
+        onToggle(true);
+      } else if (lastWidth < breakpoint && currentWidth >= breakpoint) {
+        onToggle(false);
       }
 
-      setUserName('Cashier');
-      setUserEmail('');
-    });
+      lastWidth = currentWidth;
+    };
 
-    return () => unsubscribe();
-  }, [auth]);
+    if (window.innerWidth < 1024) {
+      onToggle(true);
+    }
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [onToggle]);
 
   const handleLogout = async () => {
     try {
@@ -49,102 +57,110 @@ export function SidebarMenu({ isDark, isOpen, onClose }: SidebarMenuProps) {
     }
   };
 
-  if (!isOpen) return null;
-
   const menuItems = [
-    { icon: ShoppingCart, label: 'Point of Sale', active: true, path: '/pos' },
-    { icon: Package, label: 'Inventory', path: '/dashboard/inventory' },
-    { icon: FileText, label: 'Orders', path: '/dashboard/orders' },
-    { icon: Activity, label: 'Activity', path: '/dashboard' },
-    { icon: BarChart3, label: 'Report', path: '/dashboard/reports' },
-    { icon: Users, label: 'Team', path: '/staff-management' },
-    { icon: Settings, label: 'Setting', path: '/dashboard/settings' },
+    { icon: ShoppingCart, label: 'Point of Sale', path: '/pos' },
+    { icon: Package, label: 'Inventory', path: '/cashier-inventory' },
+    { icon: FileText, label: 'Orders', path: '/cashier-orders' },
+    { icon: Activity, label: 'Activity', path: '/pos' },
+    { icon: BarChart3, label: 'Report', path: '/pos' },
+    { icon: Users, label: 'Team', path: '/pos' },
+    { icon: Settings, label: 'Setting', path: '/pos' },
   ];
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
+  const isMenuItemActive = (path?: string) => {
+    if (!path) return false;
+    return location.pathname === path || location.pathname.startsWith(`${path}/`);
   };
 
   return (
-    <>
+    <aside
+      className={`fixed left-0 top-0 h-full flex flex-col ${
+        isDark ? 'bg-[#18191b] border-[#18191b]' : 'bg-white border-gray-200'
+      } border-r transition-all duration-300 z-50 ${isCollapsed ? 'w-20' : 'w-64'}`}
+    >
+      <div className="transition-all duration-300">
+        <Logo showText={!isCollapsed} isCollapsed={isCollapsed} />
+      </div>
 
-      {/* Sidebar */}
-      <div className={`fixed left-0 top-0 bottom-0 w-72 shadow-2xl z-50 flex flex-col animate-in slide-in-from-left duration-300 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
-        {/* Header with User Info */}
-        <div className={`p-4 sm:p-6 border-b ${isDark ? 'bg-gray-900 border-gray-700' : 'bg-gradient-to-br from-blue-50 to-white border-gray-200'}`}>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold shadow-lg">
-                {getInitials(userName)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className={`font-semibold text-sm sm:text-base truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  {userName}
-                </h3>
-                <p className={`text-xs truncate ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{userEmail}</p>
-                <span className={`inline-block mt-1 px-2 py-0.5 text-xs font-medium rounded ${isDark ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-700'}`}>
-                  Cashier
-                </span>
-              </div>
-            </div>
-            <button
-              onClick={onClose}
-              className={`p-2 rounded-lg transition-colors flex-shrink-0 ${isDark ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-600'}`}
-              aria-label="Close menu"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Menu Items */}
-        <div className="flex-1 py-2 overflow-y-auto">
-          <nav className="px-2">
-            {menuItems.map((item) => {
-              const Icon = item.icon;
-              return (
+      <nav className="flex-1 p-4 overflow-y-auto">
+        <p
+          className={`text-xs font-semibold uppercase tracking-wider mb-3 px-3 transition-opacity duration-300 ${
+            isDark ? 'text-gray-500' : 'text-gray-400'
+          } ${isCollapsed ? 'opacity-0 invisible h-0' : 'opacity-100'}`}
+        >
+          Menu
+        </p>
+        <ul className="space-y-1">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = isMenuItemActive(item.path);
+            return (
+              <li key={item.label}>
                 <button
-                  key={item.label}
-                  onClick={() => {
-                    if (item.path) {
-                      navigate(item.path);
-                      onClose();
-                    }
-                  }}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-all ${
-                    item.active
+                  onClick={() => navigate(item.path)}
+                  title={isCollapsed ? item.label : ''}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                    isCollapsed ? 'justify-center px-0' : ''
+                  } ${
+                    isActive
                       ? isDark
-                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
-                        : 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
+                        ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-600/25'
+                        : 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25'
                       : isDark
-                        ? 'text-gray-300 hover:bg-gray-700'
-                        : 'text-gray-700 hover:bg-gray-100'
+                        ? 'text-gray-400 hover:bg-[#2b2c2e] hover:text-white'
+                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
                 >
-                  <Icon className="w-5 h-5 flex-shrink-0" />
-                  <span className="font-medium text-sm">{item.label}</span>
+                  <Icon className="w-5 h-5 shrink-0" />
+                  {!isCollapsed && (
+                    <span className="font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+                      {item.label}
+                    </span>
+                  )}
                 </button>
-              );
-            })}
-          </nav>
-        </div>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
 
-        {/* Logout Button */}
-        <div className={`p-4 border-t ${isDark ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
-          <button
-            onClick={handleLogout}
-            className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all font-medium border ${isDark ? 'text-red-400 hover:bg-red-900/20 border-red-800' : 'text-red-600 hover:bg-red-50 border-red-200 hover:border-red-300'}`}
-          >
-            <LogOut className="w-5 h-5" />
-            <span>Log Out</span>
-          </button>
-        </div>
+      <div className={`p-4 border-t ${isDark ? 'border-[#18191b]' : 'border-gray-100'}`}>
+        <button
+          onClick={handleLogout}
+          title={isCollapsed ? 'Logout' : ''}
+          className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all duration-200 ${
+            isCollapsed ? 'px-0' : ''
+          } ${
+            isDark
+              ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
+              : 'bg-red-50 text-red-600 hover:bg-red-100'
+          }`}
+        >
+          <LogOut className="w-5 h-5 shrink-0" />
+          <span className={`font-medium transition-all duration-300 ${isCollapsed ? 'hidden opacity-0' : 'block opacity-100'}`}>
+            Logout
+          </span>
+        </button>
       </div>
-    </>
+
+      <button
+        onClick={() => onToggle(!isCollapsed)}
+        className={`absolute -right-4 top-20 w-8 h-8 rounded-full border flex items-center justify-center transition-all duration-300 cursor-pointer z-[60] ${
+          isDark
+            ? 'bg-[#1e1f23] border-[#2d2e33] text-gray-400 hover:text-white'
+            : 'bg-white border-gray-200 text-gray-600 hover:text-gray-900 shadow-sm'
+        }`}
+        aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+      >
+        <svg
+          className={`w-4 h-4 transition-transform duration-300 ${isCollapsed ? '' : 'rotate-180'}`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+    </aside>
   );
 }
