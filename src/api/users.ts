@@ -244,14 +244,14 @@ export const usersApi = {
   allocateInventoryToCashier: async (payload: InventoryAllocationPayload) => {
     return fetchApi<InventoryAllocationResult>(`/users/cashiers/allocate-inventory`, {
       method: "POST",
-      body: payload as Record<string, unknown>,
+      body: payload as unknown as Record<string, unknown>,
     });
   },
 
   returnInventoryFromCashier: async (payload: ReturnInventoryPayload) => {
     return fetchApi<ReturnInventoryResult>(`/users/cashiers/return-inventory`, {
       method: "POST",
-      body: payload as Record<string, unknown>,
+      body: payload as unknown as Record<string, unknown>,
     });
   },
 

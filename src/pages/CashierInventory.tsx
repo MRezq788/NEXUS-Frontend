@@ -12,7 +12,7 @@ interface CashierProductVariant {
   id: string;
   quantity: number;
   price?: number;
-  attributes?: Record<string, string>;
+  [key: string]: any;
 }
 
 interface CashierProductRecord {
@@ -148,8 +148,9 @@ export function CashierInventory() {
             ? variant.price
             : (typeof product.basePrice === 'number' ? product.basePrice : 0);
 
-          const variantLabel = variant.attributes
-            ? Object.values(variant.attributes).filter(Boolean).join(' / ')
+          const { id: _vId, price: _vP, quantity: _vQ, ...attrs } = variant;
+          const variantLabel = Object.keys(attrs).length > 0
+            ? Object.values(attrs).filter(Boolean).join(' / ')
             : '';
           const displayId = `${product.id}__${variant.id}`;
 

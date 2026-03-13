@@ -1,4 +1,3 @@
-import React from 'react'
 import { StarLogo } from '../auth/shared/AuthIcons'
 
 type Props = {

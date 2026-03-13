@@ -30,8 +30,8 @@ interface Cashier {
 interface CashierInventoryVariant {
   id: string;
   quantity: number;
-  attributes?: Record<string, string>;
   price?: number;
+  [key: string]: any;
 }
 
 interface CashierInventoryProduct {
@@ -228,13 +228,10 @@ export function StaffManagement() {
     await fetchCashierInventory(cashier.email);
   };
 
-  const getInventoryQuantity = (product: CashierInventoryProduct) => {
-    return (product.variants || []).reduce((sum, variant) => sum + (Number(variant.quantity) || 0), 0);
-  };
-
   const getVariantLabel = (variant: CashierInventoryVariant, index: number) => {
-    const attrs = variant.attributes ? Object.values(variant.attributes).filter(Boolean) : [];
-    if (attrs.length > 0) return attrs.join(" / ");
+    const { id, quantity, price, active, status, ...attrs } = variant;
+    const attrValues = Object.values(attrs).filter(Boolean);
+    if (attrValues.length > 0) return attrValues.join(" / ");
     return `Variant ${index + 1}`;
   };
 

@@ -1,4 +1,3 @@
-import React from "react";
 import { ActivityItem } from "./ActivityItem";
 
 type Props = {

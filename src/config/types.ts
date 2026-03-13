@@ -17,9 +17,16 @@ export type ProductStatus = "In Stock" | "Out of Stock";
 
 export interface ProductVariant {
   id: string;
-  attributes: Record<string, string>;
   price: number;
   quantity: number;
+  [key: string]: any;
+}
+
+export function getVariantAttributes(variant: ProductVariant): Record<string, string> {
+  if (!variant) return {};
+  if (variant.attributes) return variant.attributes as Record<string, string>; // fallback reading
+  const { id, price, quantity, active, status, ...attrs } = variant;
+  return attrs as Record<string, string>;
 }
 
 export interface ProductAttribute {

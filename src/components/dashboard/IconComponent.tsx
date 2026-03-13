@@ -5,7 +5,6 @@ interface IconComponentProps {
 
 export const IconComponent = ({ name, isDark }: IconComponentProps) => {
   const color = isDark ? "#000000" : "#000000";
-  const activeColor = isDark ? "#60a5fa" : "#3b82f6";
 
   const icons: Record<string, React.ReactElement> = {
     box: (

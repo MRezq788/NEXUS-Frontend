@@ -82,6 +82,10 @@ export function ProtectedRoute({
       Array.isArray(requiredRole) ? requiredRole : [requiredRole]
     ).map(normalizeRole);
     const normalizedUserRole = userRole ? normalizeRole(userRole) : null;
+
+    if (normalizedUserRole && !allowedRoles.includes(normalizedUserRole)) {
+      return <Navigate to="/unauthorized" replace />;
+    }
   }
 
   return <>{children}</>;

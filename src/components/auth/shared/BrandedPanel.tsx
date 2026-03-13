@@ -1,5 +1,4 @@
 import Logo from "../../layout/Logo"
-import { StarLogo } from "./AuthIcons"
 import { useState, useRef } from "react"
 
 export function BrandedPanel() {

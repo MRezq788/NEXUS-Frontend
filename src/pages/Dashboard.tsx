@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { initializeApp } from "firebase/app";
+import { onAuthStateChanged } from "firebase/auth";
 
 import { useTheme } from "../contexts/ThemeContext";
 import { WarehouseDashboard } from "../components/dashboard/WarehouseDashboard";

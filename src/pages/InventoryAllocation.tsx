@@ -36,9 +36,8 @@ interface AllocationLine {
 
 interface OwnerProductVariant {
   id: string;
-  quantity: number;
-  attributes?: Record<string, string>;
   price?: number;
+  [key: string]: any;
 }
 
 interface OwnerProduct {
@@ -68,12 +67,11 @@ function getProductStatus(quantity: number, isActive: boolean) {
 }
 
 function formatVariantLabel(variant: OwnerProductVariant, index: number) {
-  const attributes = variant.attributes
-    ? Object.values(variant.attributes).filter(Boolean)
-    : [];
+  const { id, quantity, price, active, status, ...attrs } = variant;
+  const attributeValues = Object.values(attrs).filter(Boolean);
 
-  if (attributes && attributes.length > 0) {
-    return attributes.join(" / ");
+  if (attributeValues.length > 0) {
+    return attributeValues.join(" / ");
   }
 
   return `Variant ${index + 1}`;
@@ -169,8 +167,11 @@ export function InventoryAllocation() {
           const basePrice = typeof product.basePrice === "number" ? product.basePrice : fallbackPrice;
           const variants = (product.variants || []).map((variant, index) => ({
             id: variant.id,
-            label: formatVariantLabel(variant, index),
-            attributeSummary: formatAttributeSummary(variant.attributes),
+            label: formatVariantLabel(variant as OwnerProductVariant, index),
+            attributeSummary: formatAttributeSummary((() => {
+              const { id, price, quantity, active, status, ...attrs } = variant;
+              return Object.keys(attrs).length > 0 ? attrs : undefined;
+            })() as Record<string, string>),
             quantity: Number(variant.quantity) || 0,
             price: typeof variant.price === "number" ? variant.price : basePrice,
           }));

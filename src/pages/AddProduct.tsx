@@ -533,15 +533,16 @@ export function AddProduct() {
           // Set variants if they exist
           if (p.variants && Array.isArray(p.variants)) {
             const normalizedVariants: Variant[] = p.variants.map(
-              (variant: any, idx: number) => ({
-                id: String(variant?.id ?? `loaded-variant-${idx}`),
-                attributes:
-                  variant?.attributes && typeof variant.attributes === "object"
-                    ? variant.attributes
-                    : {},
-                price: Number(variant?.price ?? 0),
-                quantity: Number(variant?.quantity ?? 0),
-              }),
+              (variant: any, idx: number) => {
+                // Extract standard fields, treat the rest as attributes
+                const { id, price, quantity, attributes, ...restAttrs } = variant;
+                return {
+                  id: String(id ?? `loaded-variant-${idx}`),
+                  attributes: attributes && typeof attributes === "object" ? attributes : restAttrs,
+                  price: Number(price ?? 0),
+                  quantity: Number(quantity ?? 0),
+                };
+              }
             );
 
             console.log("Setting loaded variants:", normalizedVariants);
@@ -769,9 +770,9 @@ export function AddProduct() {
       .filter((i) => i.url !== null)
       .map((i) => i.url as string);
 
-    // Format variants to match backend expectation (attributes, price, quantity)
+    // Format variants to match flat backend expectation
     const formattedVariants = variants.map((v) => ({
-      attributes: v.attributes,
+      ...(v.attributes || {}),
       price: v.price,
       quantity: v.quantity,
     }));

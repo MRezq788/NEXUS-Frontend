@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTheme } from "../contexts/ThemeContext";
 import type { Product } from "./WarehouseProducts";
+import { getVariantAttributes } from "../config/types";
 
 // ─── Props ───────────────────────────────────────────────────────────────────
 
@@ -38,8 +39,9 @@ export function ProductDetail({
   const attributeNames = useMemo(() => {
     const names = new Set<string>();
     for (const variant of variants) {
-      if (variant.attributes) {
-        Object.keys(variant.attributes).forEach((name) => names.add(name));
+      const attrs = getVariantAttributes(variant as any);
+      if (attrs) {
+        Object.keys(attrs).forEach((name) => names.add(name));
       }
     }
     return Array.from(names);
@@ -55,7 +57,7 @@ export function ProductDetail({
       variants.find((variant) => (Number(variant.quantity) || 0) > 0) ||
       variants[0];
 
-    setSelectedAttributes(initialVariant.attributes || {});
+    setSelectedAttributes(getVariantAttributes(initialVariant as any) || {});
     setQuantity(1);
   }, [hasVariants, variants]);
 
@@ -63,9 +65,10 @@ export function ProductDetail({
     if (!hasVariants) return undefined;
 
     return variants.find((variant) => {
+      const attrs = getVariantAttributes(variant as any);
       return attributeNames.every(
         (name) =>
-          (variant.attributes?.[name] || "") ===
+          (attrs?.[name] || "") ===
           (selectedAttributes[name] || ""),
       );
     });
@@ -73,12 +76,13 @@ export function ProductDetail({
 
   const getVariantForSelection = (selection: Record<string, string>) => {
     if (!hasVariants) return undefined;
-    return variants.find((variant) =>
-      attributeNames.every(
+    return variants.find((variant) => {
+      const attrs = getVariantAttributes(variant as any);
+      return attributeNames.every(
         (name) =>
-          (variant.attributes?.[name] || "") === (selection[name] || ""),
-      ),
-    );
+          (attrs?.[name] || "") === (selection[name] || ""),
+      );
+    });
   };
 
   const availableStock = hasVariants
@@ -93,7 +97,7 @@ export function ProductDetail({
     if (quantity < 1 || availableStock <= 0) return;
     onAddToCart(product, quantity, {
       variantId: selectedVariant?.id,
-      variantAttributes: selectedVariant?.attributes,
+      variantAttributes: selectedVariant ? getVariantAttributes(selectedVariant as any) : undefined,
       unitPrice: displayPrice,
     });
     setAdded(true);
@@ -245,7 +249,7 @@ export function ProductDetail({
                     const values = Array.from(
                       new Set(
                         variants
-                          .map((variant) => variant.attributes?.[name])
+                          .map((variant) => getVariantAttributes(variant as any)?.[name])
                           .filter(Boolean),
                       ),
                     ) as string[];
