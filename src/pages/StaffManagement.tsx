@@ -31,7 +31,7 @@ interface CashierInventoryVariant {
   id: string;
   quantity: number;
   price?: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface CashierInventoryProduct {
@@ -39,6 +39,7 @@ interface CashierInventoryProduct {
   name: string;
   category?: string;
   active?: boolean;
+  attributes?: Array<{ name: string; values?: string[] }>;
   variants?: CashierInventoryVariant[];
 }
 
@@ -47,6 +48,12 @@ interface CashierInventoryResponse {
   message: string;
   data: CashierInventoryProduct[];
 }
+
+const INTERNAL_VARIANT_KEYS = new Set([
+  'id', 'price', 'quantity', 'basePrice', 'active', 'status',
+  'sourceOwnerId', 'sourceProductId', 'sourceVariantId',
+  'sourceProductRef', 'sourceVariantRef', 'createdAt', 'updatedAt',
+]);
 
 const initialState: FormState = {
   name: "",
@@ -65,7 +72,7 @@ function formatCreatedAt(value: unknown) {
     return value.toLocaleDateString();
   }
 
-  if (typeof value === "object" && value !== null) {
+  if (typeof value === "object") {
     const maybeSeconds = (value as { seconds?: unknown }).seconds;
     if (typeof maybeSeconds === "number") {
       return new Date(maybeSeconds * 1000).toLocaleDateString();
@@ -228,11 +235,28 @@ export function StaffManagement() {
     await fetchCashierInventory(cashier.email);
   };
 
-  const getVariantLabel = (variant: CashierInventoryVariant, index: number) => {
-    const { id, quantity, price, active, status, ...attrs } = variant;
-    const attrValues = Object.values(attrs).filter(Boolean);
-    if (attrValues.length > 0) return attrValues.join(" / ");
-    return `Variant ${index + 1}`;
+
+  const getVariantLabel = (
+    variant: CashierInventoryVariant,
+    attributeNames: string[],
+    index: number,
+  ) => {
+    // First: use declared product attribute names
+    const preferred = attributeNames
+      .map((name) => variant[name])
+      .filter((v) => typeof v === 'string' && (v as string).trim().length > 0)
+      .map((v) => String(v));
+
+    if (preferred.length > 0) return preferred.join(' / ');
+
+    // Second: pick any remaining plain string that isn't internal metadata
+    const fallback = Object.entries(variant)
+      .filter(([key, val]) => !INTERNAL_VARIANT_KEYS.has(key) && typeof val === 'string' && (val as string).trim().length > 0)
+      .map(([, val]) => String(val));
+
+    if (fallback.length > 0) return fallback.join(' / ');
+
+    return index === 0 && attributeNames.length === 0 ? 'Default' : `Option ${index + 1}`;
   };
 
   const handleReturnQtyChange = (productId: string, variantId: string, value: string, maxQty: number) => {
@@ -579,6 +603,9 @@ export function StaffManagement() {
                           }
 
                           return variants.map((variant, index) => {
+                            const attributeNames = (product.attributes || [])
+                              .map((a) => a?.name)
+                              .filter((n): n is string => Boolean(n));
                             const key = `${product.id}::${variant.id}`;
                             const variantQty = Number(variant.quantity) || 0;
                             const status = !active ? "Inactive" : variantQty > 0 ? "In Stock" : "Out of Stock";
@@ -587,7 +614,7 @@ export function StaffManagement() {
                             return (
                               <tr key={key} className={`border-t ${isDark ? "border-[#2d2e33] text-gray-300" : "border-gray-200 text-gray-700"}`}>
                                 <td className="py-2.5 px-3">{product.name}</td>
-                                <td className="py-2.5 px-3">{getVariantLabel(variant, index)}</td>
+                                <td className="py-2.5 px-3">{getVariantLabel(variant, attributeNames, index)}</td>
                                 <td className="py-2.5 px-3">{product.category || "Uncategorized"}</td>
                                 <td className="py-2.5 px-3">{variantQty}</td>
                                 <td className="py-2.5 px-3">

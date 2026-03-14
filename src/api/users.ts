@@ -256,7 +256,7 @@ export const usersApi = {
   },
 
   getAllocationHistory: async (limit: number = 20) => {
-    return fetchApi<{ history: AllocationHistoryEntry }>(`/users/allocations/history`, {
+    return fetchApi<{ history: AllocationHistoryEntry[] }>(`/users/allocations/history`, {
       params: { limit },
     });
   },

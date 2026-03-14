@@ -37,7 +37,9 @@ interface AllocationLine {
 interface OwnerProductVariant {
   id: string;
   price?: number;
-  [key: string]: any;
+  quantity?: number;
+  active?: boolean;
+  [key: string]: unknown;
 }
 
 interface OwnerProduct {
@@ -47,6 +49,7 @@ interface OwnerProduct {
   category?: string;
   basePrice?: number;
   active?: boolean;
+  attributes?: Array<{ name: string; values?: string[] }>;
   variants?: OwnerProductVariant[];
 }
 
@@ -66,15 +69,33 @@ function getProductStatus(quantity: number, isActive: boolean) {
   return "In Stock" as const;
 }
 
-function formatVariantLabel(variant: OwnerProductVariant, index: number) {
-  const { id, quantity, price, active, status, ...attrs } = variant;
-  const attributeValues = Object.values(attrs).filter(Boolean);
+const INTERNAL_VARIANT_KEYS = new Set([
+  'id', 'price', 'quantity', 'basePrice', 'active', 'status',
+  'sourceOwnerId', 'sourceProductId', 'sourceVariantId',
+  'sourceProductRef', 'sourceVariantRef', 'createdAt', 'updatedAt',
+]);
 
-  if (attributeValues.length > 0) {
-    return attributeValues.join(" / ");
-  }
+function formatVariantLabel(
+  variant: OwnerProductVariant,
+  index: number,
+  attributeNames: string[] = [],
+) {
+  // First: use declared attribute names from the product
+  const preferred = attributeNames
+    .map((name) => variant[name])
+    .filter((v) => typeof v === 'string' && (v as string).trim().length > 0)
+    .map((v) => String(v));
 
-  return `Variant ${index + 1}`;
+  if (preferred.length > 0) return preferred.join(' / ');
+
+  // Second: pick any remaining plain string that isn't internal metadata
+  const fallback = Object.entries(variant)
+    .filter(([key, val]) => !INTERNAL_VARIANT_KEYS.has(key) && typeof val === 'string' && (val as string).trim().length > 0)
+    .map(([, val]) => String(val));
+
+  if (fallback.length > 0) return fallback.join(' / ');
+
+  return index === 0 && attributeNames.length === 0 ? 'Default' : `Option ${index + 1}`;
 }
 
 function formatAttributeSummary(attributes?: Record<string, string>) {
@@ -165,13 +186,19 @@ export function InventoryAllocation() {
         const mappedLines = json.data.map((product) => {
           const fallbackPrice = product.variants?.find((variant) => typeof variant.price === "number")?.price ?? 0;
           const basePrice = typeof product.basePrice === "number" ? product.basePrice : fallbackPrice;
-          const variants = (product.variants || []).map((variant, index) => ({
+        const attributeNames = (product.attributes || [])
+          .map((a) => a?.name)
+          .filter((n): n is string => Boolean(n));
+        const variants = (product.variants || []).map((variant, index) => ({
             id: variant.id,
-            label: formatVariantLabel(variant as OwnerProductVariant, index),
-            attributeSummary: formatAttributeSummary((() => {
-              const { id, price, quantity, active, status, ...attrs } = variant;
-              return Object.keys(attrs).length > 0 ? attrs : undefined;
-            })() as Record<string, string>),
+            label: formatVariantLabel(variant as OwnerProductVariant, index, attributeNames),
+            attributeSummary: formatAttributeSummary(
+              attributeNames.reduce<Record<string, string>>((acc, name) => {
+                const val = variant[name];
+                if (typeof val === 'string' && val.trim().length > 0) acc[name] = val;
+                return acc;
+              }, {}),
+            ),
             quantity: Number(variant.quantity) || 0,
             price: typeof variant.price === "number" ? variant.price : basePrice,
           }));

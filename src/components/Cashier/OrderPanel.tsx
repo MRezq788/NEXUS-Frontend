@@ -9,7 +9,6 @@ interface OrderPanelProps {
   orderNumber: string;
   onPlaceOrder: () => void;
   isPlacingOrder?: boolean;
-  productMaxQuantitiesById?: Record<string, number>;
 }
 
 export function OrderPanel({
@@ -18,7 +17,6 @@ export function OrderPanel({
   orderNumber,
   onPlaceOrder,
   isPlacingOrder = false,
-  productMaxQuantitiesById = {},
 }: OrderPanelProps) {
   const {
     cartItems,
@@ -100,7 +98,7 @@ export function OrderPanel({
         ) : (
           <div className="space-y-3 sm:space-y-4">
             {cartItems.map((item) => {
-              const maxQuantity = productMaxQuantitiesById[item.product.id] ?? Number.POSITIVE_INFINITY;
+              const maxQuantity = item.product.maxQuantity ?? Number.POSITIVE_INFINITY;
               const isAtMax = Number.isFinite(maxQuantity) && item.quantity >= maxQuantity;
 
               return (
@@ -119,6 +117,9 @@ export function OrderPanel({
                       <h3 className={`font-medium text-xs sm:text-sm truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
                         {item.product.name}
                       </h3>
+                      <p className={`text-[11px] sm:text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                        {item.product.variantLabel}
+                      </p>
                       <p className={`text-sm sm:text-base font-semibold ${isDark ? 'text-blue-400' : 'text-gray-900'}`}>
                         ${item.product.price.toFixed(2)}
                       </p>

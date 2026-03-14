@@ -9,61 +9,30 @@ import { OrderPanel } from '../components/Cashier/OrderPanel';
 import { ProductDetailModal } from '../components/Cashier/ProductDetailModal';
 import { SidebarMenu } from '../components/Cashier/SidebarMenu';
 import { mockTables } from '../lib/mockData';
-import type { Category, Product } from '../lib/database.types';
+import type { Category } from '../lib/database.types';
 import { usersApi } from '../api';
 import type { AllocationHistoryEntry, CashierPosSaleOrderPayload } from '../api/users';
-
-interface CashierProductVariant {
-  id: string;
-  quantity: number;
-  price?: number;
-  [key: string]: any;
-}
-
-interface CashierProductRecord {
-  id: string;
-  name: string;
-  description?: string;
-  category?: string;
-  basePrice?: number;
-  images?: string[];
-  active?: boolean;
-  createdAt?: string | { _seconds?: number; seconds?: number };
-  variants?: CashierProductVariant[];
-}
+import {
+  createCashierCartProduct,
+  mapCashierCatalogProducts,
+  type CashierApiProductRecord,
+  type CashierCatalogProduct,
+  type CashierCatalogVariant,
+} from '../lib/cashierCatalog';
 
 interface CashierProductsResponse {
   success: boolean;
   message: string;
-  data: CashierProductRecord[];
-}
-
-interface ProductVariantMeta {
-  sourceProductId: string;
-  sourceVariantId: string;
-  availableQuantity: number;
-  variantLabel: string;
+  data: CashierApiProductRecord[];
 }
 
 interface PosInventoryCache {
-  products: Product[];
+  products: CashierCatalogProduct[];
   categories: Category[];
-  meta: Record<string, ProductVariantMeta>;
-}
-
-function toIsoDate(value: CashierProductRecord['createdAt']) {
-  if (!value) return new Date().toISOString();
-  if (typeof value === 'string') return value;
-  const seconds = typeof value.seconds === 'number' ? value.seconds : value._seconds;
-  return seconds ? new Date(seconds * 1000).toISOString() : new Date().toISOString();
-}
-
-function toCategoryId(category: string) {
-  return category.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 }
 
 const CASHIER_SIDEBAR_STORAGE_KEY = 'cashier.sidebarCollapsed';
-const POS_INVENTORY_CACHE_KEY = 'cashier.pos.inventory';
+const POS_INVENTORY_CACHE_KEY = 'cashier.pos.inventory.v2';
 const POS_HISTORY_CACHE_KEY = 'cashier.pos.history';
 const PAGE_CACHE_TTL_MS = 60_000;
 
@@ -91,14 +60,14 @@ function writePageCache<T>(key: string, data: T) {
 export function PointOfSale() {
   const { isDark } = useTheme();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<CashierCatalogProduct | null>(null);
   const [isPageVisible, setIsPageVisible] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
     return window.localStorage.getItem(CASHIER_SIDEBAR_STORAGE_KEY) === '1';
   });
   const [orderNumber, setOrderNumber] = useState('#1000');
-  const [products, setProducts] = useState<Product[]>(() => readPageCache<PosInventoryCache>(POS_INVENTORY_CACHE_KEY)?.products.slice() ?? []);
+  const [products, setProducts] = useState<CashierCatalogProduct[]>(() => readPageCache<PosInventoryCache>(POS_INVENTORY_CACHE_KEY)?.products.slice() ?? []);
   const [categories, setCategories] = useState<Category[]>(() => readPageCache<PosInventoryCache>(POS_INVENTORY_CACHE_KEY)?.categories ?? []);
   const [history, setHistory] = useState<AllocationHistoryEntry[]>(() => readPageCache<AllocationHistoryEntry[]>(POS_HISTORY_CACHE_KEY)?.slice() ?? []);
   const [isLoadingProducts, setIsLoadingProducts] = useState(() => !readPageCache<PosInventoryCache>(POS_INVENTORY_CACHE_KEY));
@@ -120,8 +89,6 @@ export function PointOfSale() {
     promoCode,
   } = usePOS();
 
-  const [productVariantMeta, setProductVariantMeta] = useState<Record<string, ProductVariantMeta>>(() => readPageCache<PosInventoryCache>(POS_INVENTORY_CACHE_KEY)?.meta ?? {});
-
   const fetchCashierProducts = async (silent = false) => {
     if (!silent) setIsLoadingProducts(true);
     setProductsError(null);
@@ -133,7 +100,6 @@ export function PointOfSale() {
       if (!user) {
         setProducts([]);
         setCategories([]);
-        setProductVariantMeta({});
         setProductsError('User not authenticated.');
         return;
       }
@@ -150,100 +116,18 @@ export function PointOfSale() {
       if (!res.ok || !json.success) {
         setProducts([]);
         setCategories([]);
-        setProductVariantMeta({});
         setProductsError(json.message || 'Failed to fetch cashier inventory');
         return;
       }
 
-      const mappedProducts: Product[] = [];
-      const variantMetaMap: Record<string, ProductVariantMeta> = {};
-
-      json.data.forEach((product) => {
-        if (product.active === false) return;
-
-        const categoryName = product.category || 'Uncategorized';
-        const categoryId = toCategoryId(categoryName);
-
-        (product.variants || []).forEach((variant) => {
-          const availableQty = Number(variant.quantity) || 0;
-          if (availableQty <= 0) return;
-
-          const fallbackPrice = typeof variant.price === 'number'
-            ? variant.price
-            : (typeof product.basePrice === 'number' ? product.basePrice : 0);
-
-          const { id: _vId, price: _vP, quantity: _vQ, ...attrs } = variant;
-          const variantLabel = Object.keys(attrs).length > 0
-            ? Object.values(attrs).filter(Boolean).join(' / ')
-            : '';
-          const displayId = `${product.id}__${variant.id}`;
-
-          mappedProducts.push({
-            id: displayId,
-            name: variantLabel ? `${product.name} (${variantLabel})` : product.name,
-            category_id: categoryId,
-            price: fallbackPrice,
-            image_url: product.images?.[0] || null,
-            description: product.description || 'Allocated product ready for sale.',
-            created_at: toIsoDate(product.createdAt),
-          });
-
-          variantMetaMap[displayId] = {
-            sourceProductId: product.id,
-            sourceVariantId: variant.id,
-            availableQuantity: availableQty,
-            variantLabel: variantLabel || variant.id,
-          };
-        });
-      });
-
-      const groupedCategories = mappedProducts.reduce<Map<string, Category>>((map, product) => {
-        const categoryKey = product.category_id || 'uncategorized';
-        const existing = map.get(categoryKey);
-        if (existing) {
-          existing.item_count += 1;
-          return map;
-        }
-
-        const categoryName = product.category_id
-          ?.split('-')
-          .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-          .join(' ') || 'Uncategorized';
-
-        map.set(categoryKey, {
-          id: categoryKey,
-          name: categoryName,
-          icon: 'package',
-          item_count: 1,
-          created_at: new Date().toISOString(),
-        });
-        return map;
-      }, new Map());
-
-      const nextCategories: Category[] = [
-        {
-          id: 'all-menu',
-          name: 'All Menu',
-          icon: 'layout-grid',
-          item_count: mappedProducts.length,
-          created_at: new Date().toISOString(),
-        },
-        ...Array.from(groupedCategories.values()),
-      ];
-
-      setProducts(mappedProducts);
-      setProductVariantMeta(variantMetaMap);
-      setCategories(nextCategories);
-      writePageCache<PosInventoryCache>(POS_INVENTORY_CACHE_KEY, {
-        products: mappedProducts,
-        categories: nextCategories,
-        meta: variantMetaMap,
-      });
+      const catalog = mapCashierCatalogProducts(json.data);
+      setProducts(catalog.products);
+      setCategories(catalog.categories);
+      writePageCache<PosInventoryCache>(POS_INVENTORY_CACHE_KEY, catalog);
     } catch (error) {
       console.error('Error fetching cashier products:', error);
       setProducts([]);
       setCategories([]);
-      setProductVariantMeta({});
       setProductsError(error instanceof Error ? error.message : 'Failed to load cashier inventory.');
     } finally {
       setIsLoadingProducts(false);
@@ -287,49 +171,39 @@ export function PointOfSale() {
     [products, selectedCategory],
   );
 
-  const handleProductClick = (product: Product) => {
+  const handleProductClick = (product: CashierCatalogProduct) => {
     setSelectedProduct(product);
   };
 
-  const handleAddToCart = (quantity: number, notes: string) => {
-    if (selectedProduct) {
-      const maxQuantity = productVariantMeta[selectedProduct.id]?.availableQuantity ?? Number.POSITIVE_INFINITY;
-      const existingQuantity = cartItems.find((item) => item.product.id === selectedProduct.id)?.quantity ?? 0;
-      const remainingQuantity = Number.isFinite(maxQuantity)
-        ? Math.max(0, maxQuantity - existingQuantity)
-        : quantity;
-      const safeQuantity = Math.min(quantity, remainingQuantity);
+  const handleAddToCart = (
+    variant: CashierCatalogVariant,
+    quantity: number,
+    notes: string,
+  ) => {
+    if (!selectedProduct) return;
 
-      if (safeQuantity <= 0) {
-        alert('This product reached its available quantity limit.');
-        setSelectedProduct(null);
-        return;
-      }
+    const cartProduct = createCashierCartProduct(selectedProduct, variant);
+    const existingQuantity = cartItems.find((item) => item.product.id === cartProduct.id)?.quantity ?? 0;
+    const remainingQuantity = Math.max(0, cartProduct.maxQuantity - existingQuantity);
+    const safeQuantity = Math.min(quantity, remainingQuantity);
 
-      addToCart(selectedProduct, safeQuantity, notes);
-      setSelectedProduct(null);
+    if (safeQuantity <= 0) {
+      alert('This variant reached its available quantity limit.');
+      return;
     }
+
+    addToCart(cartProduct, safeQuantity, notes);
+    setSelectedProduct(null);
   };
 
   const handlePlaceOrder = async () => {
     if (cartItems.length === 0 || isPlacingOrder) return;
 
-    const saleItems = cartItems
-      .map((item) => {
-        const meta = productVariantMeta[item.product.id];
-        if (!meta) return null;
-        return {
-          productId: meta.sourceProductId,
-          variantId: meta.sourceVariantId,
-          quantity: item.quantity,
-        };
-      })
-      .filter((item): item is { productId: string; variantId: string; quantity: number } => Boolean(item));
-
-    if (saleItems.length !== cartItems.length) {
-      alert('Some cart items are missing variant mapping. Please re-add them.');
-      return;
-    }
+    const saleItems = cartItems.map((item) => ({
+      productId: item.product.sourceProductId,
+      variantId: item.product.sourceVariantId,
+      quantity: item.quantity,
+    }));
 
     const orderPayload: CashierPosSaleOrderPayload = {
       orderNumber,
@@ -461,12 +335,6 @@ export function PointOfSale() {
             orderNumber={orderNumber}
             onPlaceOrder={handlePlaceOrder}
             isPlacingOrder={isPlacingOrder}
-            productMaxQuantitiesById={Object.fromEntries(
-              Object.entries(productVariantMeta).map(([productId, meta]) => [
-                productId,
-                meta.availableQuantity,
-              ]),
-            )}
           />
         </div>
       </div>
@@ -487,9 +355,9 @@ export function PointOfSale() {
 
       {selectedProduct && (
         <ProductDetailModal
+          key={selectedProduct.id}
           isDark={isDark}
           product={selectedProduct}
-          maxQuantity={productVariantMeta[selectedProduct.id]?.availableQuantity}
           onClose={() => setSelectedProduct(null)}
           onAddToCart={handleAddToCart}
         />

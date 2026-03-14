@@ -1,16 +1,16 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, type ReactNode } from 'react';
-import type { Product } from '../lib/database.types';
+import type { CashierCartProduct } from '../lib/cashierCatalog';
 
 interface CartItem {
-  product: Product;
+  product: CashierCartProduct;
   quantity: number;
   notes?: string;
 }
 
 interface POSContextType {
   cartItems: CartItem[];
-  addToCart: (product: Product, quantity?: number, notes?: string) => void;
+  addToCart: (product: CashierCartProduct, quantity?: number, notes?: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   removeFromCart: (productId: string) => void;
   clearCart: () => void;
@@ -37,7 +37,7 @@ export function POSProvider({ children }: { children: ReactNode }) {
   const [customerName, setCustomerName] = useState('');
   const [promoCode, setPromoCode] = useState('');
 
-  const addToCart = (product: Product, quantity = 1, notes = '') => {
+  const addToCart = (product: CashierCartProduct, quantity = 1, notes = '') => {
     setCartItems((prev) => {
       const existingItem = prev.find((item) => item.product.id === product.id);
       if (existingItem) {

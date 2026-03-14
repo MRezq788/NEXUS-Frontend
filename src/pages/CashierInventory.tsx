@@ -6,62 +6,29 @@ import { CategoryTabs } from '../components/Cashier/CategoryTabs';
 import { ProductGrid } from '../components/Cashier/ProductGrid';
 import { ProductDetailModal } from '../components/Cashier/ProductDetailModal';
 import { SidebarMenu } from '../components/Cashier/SidebarMenu';
-import type { Category, Product } from '../lib/database.types';
-
-interface CashierProductVariant {
-  id: string;
-  quantity: number;
-  price?: number;
-  [key: string]: any;
-}
-
-interface CashierProductRecord {
-  id: string;
-  name: string;
-  description?: string;
-  category?: string;
-  basePrice?: number;
-  images?: string[];
-  active?: boolean;
-  createdAt?: string | { _seconds?: number; seconds?: number };
-  variants?: CashierProductVariant[];
-}
+import {
+  mapCashierCatalogProducts,
+  type CashierApiProductRecord,
+  type CashierCatalogProduct,
+} from '../lib/cashierCatalog';
+import type { Category } from '../lib/database.types';
 
 interface CashierProductsResponse {
   success: boolean;
   message: string;
-  data: CashierProductRecord[];
+  data: CashierApiProductRecord[];
 }
 
-interface ProductVariantMeta {
-  sourceProductId: string;
-  sourceVariantId: string;
-  availableQuantity: number;
-  variantLabel: string;
-}
-
-function toIsoDate(value: CashierProductRecord['createdAt']) {
-  if (!value) return new Date().toISOString();
-  if (typeof value === 'string') return value;
-  const seconds = typeof value.seconds === 'number' ? value.seconds : value._seconds;
-  return seconds ? new Date(seconds * 1000).toISOString() : new Date().toISOString();
-}
-
-function toCategoryId(category: string) {
-  return category.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+interface CashierInventoryCache {
+  products: CashierCatalogProduct[];
+  categories: Category[];
 }
 
 const CASHIER_SIDEBAR_STORAGE_KEY = 'cashier.sidebarCollapsed';
-const CASHIER_INVENTORY_CACHE_KEY = 'cashier.inventory.page';
+const CASHIER_INVENTORY_CACHE_KEY = 'cashier.inventory.page.v2';
 const PAGE_CACHE_TTL_MS = 60_000;
 
 type CachedPayload<T> = { savedAt: number; data: T };
-
-interface CashierInventoryCache {
-  products: Product[];
-  categories: Category[];
-  meta: Record<string, ProductVariantMeta>;
-}
 
 function readPageCache<T>(key: string): T | null {
   if (typeof window === 'undefined') return null;
@@ -85,18 +52,18 @@ function writePageCache<T>(key: string, data: T) {
 export function CashierInventory() {
   const { isDark } = useTheme();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<CashierCatalogProduct | null>(null);
   const [isPageVisible, setIsPageVisible] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
     return window.localStorage.getItem(CASHIER_SIDEBAR_STORAGE_KEY) === '1';
   });
-  const [products, setProducts] = useState<Product[]>(() => readPageCache<CashierInventoryCache>(CASHIER_INVENTORY_CACHE_KEY)?.products.slice() ?? []);
+  const [products, setProducts] = useState<CashierCatalogProduct[]>(() => readPageCache<CashierInventoryCache>(CASHIER_INVENTORY_CACHE_KEY)?.products.slice() ?? []);
   const [categories, setCategories] = useState<Category[]>(() => readPageCache<CashierInventoryCache>(CASHIER_INVENTORY_CACHE_KEY)?.categories ?? []);
-  const [isLoadingProducts, setIsLoadingProducts] = useState(() => !Boolean(readPageCache<CashierInventoryCache>(CASHIER_INVENTORY_CACHE_KEY)));
+  const [isLoadingProducts, setIsLoadingProducts] = useState(
+    () => readPageCache<CashierInventoryCache>(CASHIER_INVENTORY_CACHE_KEY) == null,
+  );
   const [productsError, setProductsError] = useState<string | null>(null);
-
-  const [productVariantMeta, setProductVariantMeta] = useState<Record<string, ProductVariantMeta>>(() => readPageCache<CashierInventoryCache>(CASHIER_INVENTORY_CACHE_KEY)?.meta ?? {});
 
   const fetchCashierProducts = async (silent = false) => {
     if (!silent) setIsLoadingProducts(true);
@@ -109,7 +76,6 @@ export function CashierInventory() {
       if (!user) {
         setProducts([]);
         setCategories([]);
-        setProductVariantMeta({});
         setProductsError('User not authenticated.');
         return;
       }
@@ -126,99 +92,18 @@ export function CashierInventory() {
       if (!res.ok || !json.success) {
         setProducts([]);
         setCategories([]);
-        setProductVariantMeta({});
         setProductsError(json.message || 'Failed to fetch cashier inventory');
         return;
       }
 
-      const mappedProducts: Product[] = [];
-      const variantMetaMap: Record<string, ProductVariantMeta> = {};
-
-      json.data.forEach((product) => {
-        if (product.active === false) return;
-
-        const categoryName = product.category || 'Uncategorized';
-        const categoryId = toCategoryId(categoryName);
-
-        (product.variants || []).forEach((variant) => {
-          const availableQty = Number(variant.quantity) || 0;
-          if (availableQty <= 0) return;
-
-          const fallbackPrice = typeof variant.price === 'number'
-            ? variant.price
-            : (typeof product.basePrice === 'number' ? product.basePrice : 0);
-
-          const { id: _vId, price: _vP, quantity: _vQ, ...attrs } = variant;
-          const variantLabel = Object.keys(attrs).length > 0
-            ? Object.values(attrs).filter(Boolean).join(' / ')
-            : '';
-          const displayId = `${product.id}__${variant.id}`;
-
-          mappedProducts.push({
-            id: displayId,
-            name: variantLabel ? `${product.name} (${variantLabel})` : product.name,
-            category_id: categoryId,
-            price: fallbackPrice,
-            image_url: product.images?.[0] || null,
-            description: product.description || 'Allocated product ready for sale.',
-            created_at: toIsoDate(product.createdAt),
-          });
-
-          variantMetaMap[displayId] = {
-            sourceProductId: product.id,
-            sourceVariantId: variant.id,
-            availableQuantity: availableQty,
-            variantLabel: variantLabel || variant.id,
-          };
-        });
-      });
-
-      const groupedCategories = mappedProducts.reduce<Map<string, Category>>((map, product) => {
-        const categoryKey = product.category_id || 'uncategorized';
-        const existing = map.get(categoryKey);
-        if (existing) {
-          existing.item_count += 1;
-          return map;
-        }
-
-        const categoryName = product.category_id
-          ?.split('-')
-          .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-          .join(' ') || 'Uncategorized';
-
-        map.set(categoryKey, {
-          id: categoryKey,
-          name: categoryName,
-          icon: 'package',
-          item_count: 1,
-          created_at: new Date().toISOString(),
-        });
-        return map;
-      }, new Map());
-
-      setProducts(mappedProducts);
-      setProductVariantMeta(variantMetaMap);
-      const nextCategories: Category[] = [
-        {
-          id: 'all-menu',
-          name: 'All Menu',
-          icon: 'layout-grid',
-          item_count: mappedProducts.length,
-          created_at: new Date().toISOString(),
-        },
-        ...Array.from(groupedCategories.values()),
-      ];
-      setCategories(nextCategories);
-      writePageCache<CashierInventoryCache>(CASHIER_INVENTORY_CACHE_KEY, {
-        products: mappedProducts,
-        categories: nextCategories,
-        meta: variantMetaMap,
-      });
+      const catalog = mapCashierCatalogProducts(json.data);
+      setProducts(catalog.products);
+      setCategories(catalog.categories);
+      writePageCache<CashierInventoryCache>(CASHIER_INVENTORY_CACHE_KEY, catalog);
     } catch (error) {
       console.error('Error fetching cashier products:', error);
       setProducts([]);
       setCategories([]);
-      setProductVariantMeta({});
       setProductsError(error instanceof Error ? error.message : 'Failed to load cashier inventory.');
     } finally {
       setIsLoadingProducts(false);
@@ -231,7 +116,7 @@ export function CashierInventory() {
   }, []);
 
   useEffect(() => {
-    fetchCashierProducts(products.length > 0);
+    fetchCashierProducts(true);
   }, []);
 
   useEffect(() => {
@@ -243,7 +128,7 @@ export function CashierInventory() {
     [products, selectedCategory],
   );
 
-  const handleProductClick = (product: Product) => {
+  const handleProductClick = (product: CashierCatalogProduct) => {
     setSelectedProduct(product);
   };
 
@@ -293,9 +178,9 @@ export function CashierInventory() {
 
       {selectedProduct && (
         <ProductDetailModal
+          key={selectedProduct.id}
           isDark={isDark}
           product={selectedProduct}
-          maxQuantity={productVariantMeta[selectedProduct.id]?.availableQuantity}
           readOnly
           onClose={() => setSelectedProduct(null)}
         />

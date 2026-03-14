@@ -1,12 +1,13 @@
 import { Search } from 'lucide-react';
 import { useState } from 'react';
-import type { Product, Category } from '../../lib/database.types';
+import type { Category } from '../../lib/database.types';
+import type { CashierCatalogProduct } from '../../lib/cashierCatalog';
 
 interface ProductGridProps {
   isDark: boolean;
-  products: Product[];
+  products: CashierCatalogProduct[];
   categories: Category[];
-  onProductClick: (product: Product) => void;
+  onProductClick: (product: CashierCatalogProduct) => void;
 }
 
 export function ProductGrid({
@@ -17,9 +18,17 @@ export function ProductGrid({
 }: ProductGridProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredProducts = products.filter((product) =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredProducts = products.filter((product) => {
+    const searchableText = [
+      product.name,
+      product.description || '',
+      ...product.variants.map((variant) => variant.label),
+    ]
+      .join(' ')
+      .toLowerCase();
+
+    return searchableText.includes(searchQuery.toLowerCase());
+  });
 
   const getCategoryColor = (categoryId: string | null) => {
     const categoryMap: Record<string, string> = {
@@ -75,14 +84,21 @@ export function ProductGrid({
               {product.name}
             </h3>
             <p
-              className={`text-xs font-medium mb-1 sm:mb-2 ${getCategoryColor(
+              className={`text-xs font-medium mb-1 ${getCategoryColor(
                 product.category_id
               )}`}
             >
               {getCategoryName(product.category_id)}
             </p>
+            <p className={`text-[11px] sm:text-xs mb-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+              {product.variants.length === 1
+                ? product.variants[0].label
+                : `${product.variants.length} variants available`}
+            </p>
             <p className={`text-base sm:text-lg font-bold ${isDark ? 'text-blue-400' : 'text-gray-900'}`}>
-              ${product.price.toFixed(2)}
+              {product.minPrice === product.maxPrice
+                ? `$${product.minPrice.toFixed(2)}`
+                : `$${product.minPrice.toFixed(2)} - $${product.maxPrice.toFixed(2)}`}
             </p>
           </button>
         ))}
