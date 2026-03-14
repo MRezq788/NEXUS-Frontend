@@ -94,7 +94,11 @@ export function mapCashierCatalogProducts(
         const price = typeof variant.price === 'number'
           ? variant.price
           : (typeof product.basePrice === 'number' ? product.basePrice : 0);
-        const label = buildVariantLabel(variant, attributeNames) || variant.id;
+        const fallbackLabel =
+          typeof variant.sourceVariantId === 'string' && variant.sourceVariantId.trim().length > 0
+            ? variant.sourceVariantId
+            : variant.id;
+        const label = buildVariantLabel(variant, attributeNames) || fallbackLabel;
 
         return {
           id: variant.id,

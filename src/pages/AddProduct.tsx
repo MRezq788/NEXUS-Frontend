@@ -18,6 +18,30 @@ interface Variant {
   quantity: number;
 }
 
+const INTERNAL_VARIANT_KEYS = new Set([
+  "id",
+  "price",
+  "quantity",
+  "basePrice",
+  "active",
+  "status",
+  "sourceOwnerId",
+  "sourceProductId",
+  "sourceVariantId",
+  "sourceProductRef",
+  "sourceVariantRef",
+  "createdAt",
+  "updatedAt",
+]);
+
+function isDisplayableVariantValue(value: unknown): value is string | number | boolean {
+  return (
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  );
+}
+
 function getVariantAttributesKey(attributes: Record<string, string>): string {
   return Object.keys(attributes)
     .sort()
@@ -532,13 +556,35 @@ export function AddProduct() {
 
           // Set variants if they exist
           if (p.variants && Array.isArray(p.variants)) {
+            const allowedAttributeNames = new Set(
+              loadedAttributes.map((attribute) => attribute.name),
+            );
             const normalizedVariants: Variant[] = p.variants.map(
-              (variant: any, idx: number) => {
+              (variant: Record<string, unknown>, idx: number) => {
                 // Extract standard fields, treat the rest as attributes
                 const { id, price, quantity, attributes, ...restAttrs } = variant;
+                const rawAttributes =
+                  attributes && typeof attributes === "object"
+                    ? (attributes as Record<string, unknown>)
+                    : restAttrs;
+
+                const normalizedAttributes = Object.fromEntries(
+                  Object.entries(rawAttributes).filter(([key, value]) => {
+                    if (INTERNAL_VARIANT_KEYS.has(key)) return false;
+                    if (
+                      allowedAttributeNames.size > 0 &&
+                      !allowedAttributeNames.has(key)
+                    ) {
+                      return false;
+                    }
+
+                    return isDisplayableVariantValue(value);
+                  }).map(([key, value]) => [key, String(value)]),
+                ) as Record<string, string>;
+
                 return {
                   id: String(id ?? `loaded-variant-${idx}`),
-                  attributes: attributes && typeof attributes === "object" ? attributes : restAttrs,
+                  attributes: normalizedAttributes,
                   price: Number(price ?? 0),
                   quantity: Number(quantity ?? 0),
                 };
@@ -770,12 +816,25 @@ export function AddProduct() {
       .filter((i) => i.url !== null)
       .map((i) => i.url as string);
 
-    // Format variants to match flat backend expectation
-    const formattedVariants = variants.map((v) => ({
-      ...(v.attributes || {}),
-      price: v.price,
-      quantity: v.quantity,
-    }));
+    // Preserve variant identity in edit mode so downstream cashier links remain stable.
+    const formattedVariants = variants.map((v) => {
+      const payload: {
+        id?: string;
+        attributes: Record<string, string>;
+        price: number;
+        quantity: number;
+      } = {
+        attributes: v.attributes || {},
+        price: v.price,
+        quantity: v.quantity,
+      };
+
+      if (isEdit && v.id) {
+        payload.id = v.id;
+      }
+
+      return payload;
+    });
 
     const productData = {
       name,
