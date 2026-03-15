@@ -58,6 +58,7 @@ function writePageCache<T>(key: string, data: T) {
 
 export function PointOfSale() {
   const { isDark } = useTheme();
+  const [currency, setCurrency] = useState(() => localStorage.getItem('pos.currency') || 'EGP');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<CashierCatalogProduct | null>(null);
   const [isPageVisible, setIsPageVisible] = useState(false);
@@ -157,6 +158,10 @@ export function PointOfSale() {
     window.localStorage.setItem(CASHIER_SIDEBAR_STORAGE_KEY, isSidebarCollapsed ? '1' : '0');
   }, [isSidebarCollapsed]);
 
+  useEffect(() => {
+    localStorage.setItem('pos.currency', currency);
+  }, [currency]);
+
   const filteredProducts = useMemo(
     () => (selectedCategory ? products.filter((p) => p.category_id === selectedCategory) : products),
     [products, selectedCategory],
@@ -194,6 +199,7 @@ export function PointOfSale() {
       productId: item.product.sourceProductId,
       variantId: item.product.sourceVariantId,
       quantity: item.quantity,
+      price: item.product.price,
     }));
 
     const orderPayload: CashierPosSaleOrderPayload = { total };
@@ -233,6 +239,8 @@ export function PointOfSale() {
             onMenuClick={() => setIsSidebarCollapsed((prev) => !prev)}
             onCloseOrder={handleCloseOrder}
             showCloseOrder
+            currency={currency}
+            onCurrencyChange={setCurrency}
           />
 
           <div className={`px-3 sm:px-4 md:px-6 pt-4 pb-2 border-b ${isDark ? 'bg-[#1e1f23] border-[#2d2e33]' : 'bg-slate-50 border-gray-200'}`}>
@@ -254,12 +262,13 @@ export function PointOfSale() {
                 <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
               </div>
             ) : (
-              <ProductGrid
-                isDark={isDark}
-                products={filteredProducts}
-                categories={categories}
-                onProductClick={handleProductClick}
-              />
+               <ProductGrid
+                 isDark={isDark}
+                 products={filteredProducts}
+                 categories={categories}
+                 onProductClick={handleProductClick}
+                 currency={currency}
+               />
             )}
 
             <section className={`rounded-2xl border ${isDark ? 'bg-[#1e1f23] border-[#2d2e33]' : 'bg-white border-gray-100 shadow-lg shadow-gray-200/30'}`}>
@@ -312,6 +321,7 @@ export function PointOfSale() {
             isDark={isDark}
             onPlaceOrder={handlePlaceOrder}
             isPlacingOrder={isPlacingOrder}
+            currency={currency}
           />
         </div>
       </div>
@@ -330,15 +340,16 @@ export function PointOfSale() {
         </div>
       )}
 
-      {selectedProduct && (
-        <ProductDetailModal
-          key={selectedProduct.id}
-          isDark={isDark}
-          product={selectedProduct}
-          onClose={() => setSelectedProduct(null)}
-          onAddToCart={handleAddToCart}
-        />
-      )}
+       {selectedProduct && (
+         <ProductDetailModal
+           key={selectedProduct.id}
+           isDark={isDark}
+           product={selectedProduct}
+           onClose={() => setSelectedProduct(null)}
+           onAddToCart={handleAddToCart}
+           currency={currency}
+         />
+       )}
     </div>
   );
 }

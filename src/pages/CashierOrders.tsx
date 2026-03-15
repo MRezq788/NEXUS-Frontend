@@ -46,6 +46,7 @@ function formatOrderDate(value: CashierOrderItem["createdAt"]) {
 
 export function CashierOrders() {
   const { isDark } = useTheme();
+  const [currency, setCurrency] = useState(() => localStorage.getItem('pos.currency') || 'EGP');
   const [isPageVisible, setIsPageVisible] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
@@ -96,6 +97,10 @@ export function CashierOrders() {
     window.localStorage.setItem(CASHIER_SIDEBAR_STORAGE_KEY, isSidebarCollapsed ? '1' : '0');
   }, [isSidebarCollapsed]);
 
+  useEffect(() => {
+    localStorage.setItem('pos.currency', currency);
+  }, [currency]);
+
   return (
     <div
       className={`h-screen flex flex-col overflow-hidden ${
@@ -112,6 +117,8 @@ export function CashierOrders() {
         <POSHeader
           isDark={isDark}
           onMenuClick={() => setIsSidebarCollapsed((prev) => !prev)}
+          currency={currency}
+          onCurrencyChange={setCurrency}
         />
 
         <div className="flex-1 overflow-y-auto px-3 sm:px-4 md:px-6 py-4 scrollbar-hide">
@@ -155,7 +162,7 @@ export function CashierOrders() {
                         }`}
                       >
                         <td className="px-6 py-4 font-medium">{order.id}</td>
-                        <td className="px-6 py-4">${Number(order.total || 0).toFixed(2)}</td>
+                        <td className="px-6 py-4">{Number(order.total || 0).toFixed(2)} {currency}</td>
                         <td className="px-6 py-4">{formatOrderDate(order.createdAt)}</td>
                       </tr>
                     ))}

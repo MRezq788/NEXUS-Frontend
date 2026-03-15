@@ -51,6 +51,7 @@ function writePageCache<T>(key: string, data: T) {
 
 export function CashierInventory() {
   const { isDark } = useTheme();
+  const [currency, setCurrency] = useState(() => localStorage.getItem('pos.currency') || 'EGP');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<CashierCatalogProduct | null>(null);
   const [isPageVisible, setIsPageVisible] = useState(false);
@@ -123,6 +124,10 @@ export function CashierInventory() {
     window.localStorage.setItem(CASHIER_SIDEBAR_STORAGE_KEY, isSidebarCollapsed ? '1' : '0');
   }, [isSidebarCollapsed]);
 
+  useEffect(() => {
+    localStorage.setItem('pos.currency', currency);
+  }, [currency]);
+
   const filteredProducts = useMemo(
     () => (selectedCategory ? products.filter((p) => p.category_id === selectedCategory) : products),
     [products, selectedCategory],
@@ -139,7 +144,7 @@ export function CashierInventory() {
       <div className={`flex-1 flex flex-col overflow-hidden transform-gpu transition-all duration-500 ${
         isPageVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
       } ${isSidebarCollapsed ? 'ml-20' : 'ml-64'}`}>
-        <POSHeader isDark={isDark} onMenuClick={() => setIsSidebarCollapsed((prev) => !prev)} />
+        <POSHeader isDark={isDark} onMenuClick={() => setIsSidebarCollapsed((prev) => !prev)} currency={currency} onCurrencyChange={setCurrency} />
 
         <div className={`px-3 sm:px-4 md:px-6 pt-4 pb-2 border-b ${isDark ? 'bg-[#1e1f23] border-[#2d2e33]' : 'bg-slate-50 border-gray-200'}`}>
           <CategoryTabs
@@ -182,6 +187,7 @@ export function CashierInventory() {
           isDark={isDark}
           product={selectedProduct}
           readOnly
+          currency={currency}
           onClose={() => setSelectedProduct(null)}
         />
       )}

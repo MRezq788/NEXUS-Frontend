@@ -5,12 +5,14 @@ interface OrderPanelProps {
   isDark: boolean;
   onPlaceOrder: () => void;
   isPlacingOrder?: boolean;
+  currency?: string;
 }
 
 export function OrderPanel({
   isDark,
   onPlaceOrder,
   isPlacingOrder = false,
+  currency = 'EGP',
 }: OrderPanelProps) {
   const {
     cartItems,
@@ -111,7 +113,7 @@ export function OrderPanel({
       <div className={`p-3 sm:p-4 border-t space-y-2 sm:space-y-3 ${isDark ? 'bg-[#18191b] border-[#2d2e33]' : 'bg-slate-50 border-gray-200'}`}>
         <div className={`flex justify-between text-base sm:text-lg font-bold pt-2 sm:pt-3 border-t ${isDark ? 'border-[#2d2e33]' : 'border-gray-200'}`}>
           <span className={isDark ? 'text-white' : 'text-gray-900'}>TOTAL</span>
-          <span className="text-blue-600">${total.toFixed(2)}</span>
+          <span className="text-blue-600">{total.toFixed(2)} {currency}</span>
         </div>
 
         {/* Place Order Button */}
@@ -124,7 +126,7 @@ export function OrderPanel({
             ? 'Placing Order...'
             : cartItems.length === 0
               ? 'Add Items First'
-              : `Place Order - $${total.toFixed(2)}`}
+              : `Place Order - ${total.toFixed(2)} ${currency}`}
         </button>
       </div>
     </div>

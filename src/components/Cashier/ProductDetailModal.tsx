@@ -15,6 +15,7 @@ interface ProductDetailModalProps {
     notes: string,
   ) => void;
   readOnly?: boolean;
+  currency?: string; // <-- Add currency prop
 }
 
 export function ProductDetailModal({
@@ -23,6 +24,7 @@ export function ProductDetailModal({
   onClose,
   onAddToCart,
   readOnly = false,
+  currency = 'EGP', // <-- Default to EGP if not provided
 }: ProductDetailModalProps) {
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState('');
@@ -82,7 +84,7 @@ export function ProductDetailModal({
               </p>
               <div className="mt-3 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
                 <span className={`px-2.5 py-1 rounded-full font-semibold ${isDark ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>
-                  ${displayPrice.toFixed(2)}
+                  {currency} {displayPrice.toFixed(2)}
                 </span>
                 <span className={`px-2.5 py-1 rounded-full ${isDark ? 'bg-[#18191b] text-gray-300' : 'bg-gray-100 text-gray-700'}`}>
                   {product.variants.length} variant{product.variants.length === 1 ? '' : 's'}
@@ -141,7 +143,7 @@ export function ProductDetailModal({
                           </p>
                         </div>
                         <p className={`text-sm font-semibold whitespace-nowrap ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
-                          ${variant.price.toFixed(2)}
+                          {currency} {variant.price.toFixed(2)}
                         </p>
                       </div>
                       {isSelected && (
@@ -176,7 +178,7 @@ export function ProductDetailModal({
                   </p>
                 </div>
                 <p className={`text-base font-bold whitespace-nowrap ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
-                  ${displayPrice.toFixed(2)}
+                  {currency} {displayPrice.toFixed(2)}
                 </p>
               </div>
             </div>
@@ -218,7 +220,7 @@ export function ProductDetailModal({
                     <div className="text-right">
                       <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Line total</p>
                       <p className={`text-base font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                        ${(displayPrice * quantity).toFixed(2)}
+                        {currency} {(displayPrice * quantity).toFixed(2)}
                       </p>
                     </div>
                   </div>

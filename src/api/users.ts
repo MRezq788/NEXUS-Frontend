@@ -86,6 +86,7 @@ export interface CashierPosSaleItem {
   productId: string;
   variantId: string;
   quantity: number;
+  price: number;
 }
 
 export interface CashierPosSaleOrderPayload {

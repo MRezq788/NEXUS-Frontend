@@ -8,9 +8,17 @@ interface POSHeaderProps {
   onMenuClick: () => void;
   onCloseOrder?: () => void;
   showCloseOrder?: boolean;
+  currency?: string;
+  onCurrencyChange?: (currency: string) => void;
 }
 
-export function POSHeader({ isDark, onMenuClick, onCloseOrder, showCloseOrder = false }: POSHeaderProps) {
+const SUPPORTED_CURRENCIES = [
+  { code: 'EGP', label: 'EGP' },
+  { code: 'USD', label: 'USD' },
+  { code: 'EUR', label: 'EUR' },
+];
+
+export function POSHeader({ isDark, onMenuClick, onCloseOrder, showCloseOrder = false, currency = 'EGP', onCurrencyChange }: POSHeaderProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
   const auth = getAuth();
   const userName = auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0] || 'Cashier';
@@ -84,6 +92,18 @@ export function POSHeader({ isDark, onMenuClick, onCloseOrder, showCloseOrder = 
                 {formatTime(currentTime)}
               </span>
             </div>
+
+            {/* Currency Selector */}
+            <select
+              value={currency}
+              onChange={e => onCurrencyChange?.(e.target.value)}
+              className={`ml-4 px-2 py-1 rounded border text-xs font-medium ${isDark ? 'bg-[#18191b] border-[#2d2e33] text-blue-300' : 'bg-white border-gray-200 text-blue-700'}`}
+              style={{ minWidth: 70 }}
+            >
+              {SUPPORTED_CURRENCIES.map(cur => (
+                <option key={cur.code} value={cur.code}>{cur.label}</option>
+              ))}
+            </select>
           </div>
 
           {/* Right Section */}

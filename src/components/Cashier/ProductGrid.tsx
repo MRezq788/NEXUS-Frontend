@@ -8,6 +8,7 @@ interface ProductGridProps {
   products: CashierCatalogProduct[];
   categories: Category[];
   onProductClick: (product: CashierCatalogProduct) => void;
+  currency?: string; // Add currency prop
 }
 
 export function ProductGrid({
@@ -15,6 +16,7 @@ export function ProductGrid({
   products,
   categories,
   onProductClick,
+  currency = 'EGP',
 }: ProductGridProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -97,8 +99,8 @@ export function ProductGrid({
             </p>
             <p className={`text-base sm:text-lg font-bold ${isDark ? 'text-blue-400' : 'text-gray-900'}`}>
               {product.minPrice === product.maxPrice
-                ? `$${product.minPrice.toFixed(2)}`
-                : `$${product.minPrice.toFixed(2)} - $${product.maxPrice.toFixed(2)}`}
+                ? `${currency} ${product.minPrice.toFixed(2)}`
+                : `${currency} ${product.minPrice.toFixed(2)} - ${currency} ${product.maxPrice.toFixed(2)}`}
             </p>
           </button>
         ))}
