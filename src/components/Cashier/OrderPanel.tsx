@@ -1,88 +1,35 @@
-import { CreditCard as Edit, Minus, Plus, SmilePlus, CheckCircle } from 'lucide-react';
-import { useState } from 'react';
+import { Minus, Plus, SmilePlus } from 'lucide-react';
 import { usePOS } from '../../contexts/POSContext';
-import type { RestaurantTable } from '../../lib/database.types';
 
 interface OrderPanelProps {
   isDark: boolean;
-  tables: RestaurantTable[];
-  orderNumber: string;
   onPlaceOrder: () => void;
   isPlacingOrder?: boolean;
 }
 
 export function OrderPanel({
   isDark,
-  tables,
-  orderNumber,
   onPlaceOrder,
   isPlacingOrder = false,
 }: OrderPanelProps) {
   const {
     cartItems,
     updateQuantity,
-    subtotal,
-    tax,
-    discount,
     total,
-    selectedTable,
-    setSelectedTable,
-    orderType,
-    setOrderType,
-    customerName,
-    promoCode,
-    setPromoCode,
   } = usePOS();
-
-  const [promoInput, setPromoInput] = useState('');
-
-  const handlePromoApply = () => {
-    if (promoInput.trim()) {
-      setPromoCode(promoInput.trim());
-      setPromoInput('');
-    }
-  };
 
   return (
     <div className={`w-full md:w-96 lg:w-[400px] border-l flex flex-col h-full ${isDark ? 'bg-[#1e1f23] border-[#2d2e33]' : 'bg-white border-gray-100 shadow-lg shadow-gray-200/30'}`}>
       {/* Header */}
       <div className={`p-3 sm:p-4 border-b ${isDark ? 'bg-[#18191b] border-[#2d2e33]' : 'bg-slate-50 border-gray-200'}`}>
-        <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <div className="flex items-center mb-3 sm:mb-4">
           <div className="flex-1 min-w-0">
             <h2 className={`font-semibold text-sm sm:text-base mb-0.5 sm:mb-1 truncate ${isDark ? 'text-white' : 'text-gray-800'}`}>
-              {customerName || "Customer's Name"}
+              Order Summary
             </h2>
-            <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Order #{orderNumber}</p>
           </div>
-          <button className={`p-1.5 sm:p-2 rounded-lg transition-colors flex-shrink-0 ${isDark ? 'hover:bg-[#1e1f23] text-gray-400' : 'hover:bg-white text-gray-600'}`}>
-            <Edit className="w-4 h-4" />
-          </button>
         </div>
 
-        {/* Table and Order Type Selection */}
-        <div className="flex gap-2">
-          <select
-            value={selectedTable || ''}
-            onChange={(e) => setSelectedTable(e.target.value)}
-            className={`flex-1 px-2 sm:px-3 py-2 border rounded-lg text-xs sm:text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 ${isDark ? 'bg-[#1e1f23] border-[#2d2e33] text-white' : 'bg-white border-gray-200 text-gray-900'}`}
-          >
-            <option value="">Select Table</option>
-            {tables.map((table) => (
-              <option key={table.id} value={table.id}>
-                {table.table_number}
-              </option>
-            ))}
-          </select>
-          <select
-            value={orderType}
-            onChange={(e) => setOrderType(e.target.value)}
-            className={`flex-1 px-2 sm:px-3 py-2 border rounded-lg text-xs sm:text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 ${isDark ? 'bg-[#1e1f23] border-[#2d2e33] text-white' : 'bg-white border-gray-200 text-gray-900'}`}
-          >
-            <option>Dine In</option>
-            <option>Take Away</option>
-            <option>Delivery</option>
-          </select>
-        </div>
       </div>
 
       {/* Cart Items */}
@@ -124,11 +71,6 @@ export function OrderPanel({
                         ${item.product.price.toFixed(2)}
                       </p>
                     </div>
-                    {item.notes && (
-                      <button className={`p-1 rounded transition-colors flex-shrink-0 ${isDark ? 'hover:bg-[#18191b] text-gray-500' : 'hover:bg-gray-100 text-gray-400'}`}>
-                        <Edit className="w-3 h-3" />
-                      </button>
-                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <button
@@ -167,53 +109,9 @@ export function OrderPanel({
 
       {/* Footer - Totals and Checkout */}
       <div className={`p-3 sm:p-4 border-t space-y-2 sm:space-y-3 ${isDark ? 'bg-[#18191b] border-[#2d2e33]' : 'bg-slate-50 border-gray-200'}`}>
-        <div className="flex justify-between text-xs sm:text-sm">
-          <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Subtotal</span>
-          <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>${subtotal.toFixed(2)}</span>
-        </div>
-        <div className="flex justify-between text-xs sm:text-sm">
-          <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Tax (10%)</span>
-          <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>${tax.toFixed(2)}</span>
-        </div>
-        {discount > 0 && (
-          <div className="flex justify-between text-xs sm:text-sm">
-            <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Discount</span>
-            <span className="font-medium text-green-600">
-              -${discount.toFixed(2)}
-            </span>
-          </div>
-        )}
         <div className={`flex justify-between text-base sm:text-lg font-bold pt-2 sm:pt-3 border-t ${isDark ? 'border-[#2d2e33]' : 'border-gray-200'}`}>
           <span className={isDark ? 'text-white' : 'text-gray-900'}>TOTAL</span>
           <span className="text-blue-600">${total.toFixed(2)}</span>
-        </div>
-
-        {/* Promo and Payment Method */}
-        <div className="flex gap-2 pt-2">
-          {promoCode ? (
-            <div className={`flex-1 px-3 sm:px-4 py-2 border rounded-lg flex items-center justify-between ${isDark ? 'bg-green-900/20 border-green-800 text-green-400' : 'bg-green-50 border-green-500 text-green-700'}`}>
-              <span className="text-xs sm:text-sm font-medium">Promo Applied ✓</span>
-              <CheckCircle className="w-4 h-4" />
-            </div>
-          ) : (
-            <>
-              <input
-                type="text"
-                value={promoInput}
-                onChange={(e) => setPromoInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handlePromoApply()}
-                placeholder="Promo code..."
-                className={`flex-1 px-3 py-2 border rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 ${isDark ? 'bg-[#1e1f23] border-[#2d2e33] text-white placeholder-gray-400' : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400'}`}
-              />
-              <button
-                onClick={handlePromoApply}
-                className={`px-3 py-2 border rounded-lg text-xs sm:text-sm font-medium transition-colors flex items-center gap-1 ${isDark ? 'bg-[#1e1f23] border-[#2d2e33] text-gray-300 hover:bg-[#23252b]' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
-              >
-                <SmilePlus className="w-4 h-4" />
-                Apply
-              </button>
-            </>
-          )}
         </div>
 
         {/* Place Order Button */}

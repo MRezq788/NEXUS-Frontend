@@ -20,6 +20,8 @@ import { InventoryAllocation } from "./pages/InventoryAllocation";
 import { CashierInventory } from "./pages/CashierInventory.tsx";
 import { CashierOrders } from "./pages/CashierOrders.tsx";
 
+const NON_CASHIER_ROLES = ["business_owner", "warehouse"];
+
 function App() {
   return (
     <POSProvider>
@@ -32,7 +34,7 @@ function App() {
             <Route
               path="/dashboard"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole={NON_CASHIER_ROLES}>
                   <DashboardLayout>
                     <Dashboard />
                   </DashboardLayout>
@@ -43,7 +45,7 @@ function App() {
             <Route
               path="/dashboard/inventory"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole={NON_CASHIER_ROLES}>
                   <DashboardLayout>
                     <Inventory />
                   </DashboardLayout>
@@ -65,7 +67,7 @@ function App() {
             <Route
               path="/warehouses"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole={NON_CASHIER_ROLES}>
                   <DashboardLayout>
                     <Warehouses />
                   </DashboardLayout>
@@ -76,7 +78,7 @@ function App() {
             <Route
               path="/warehouses/shop"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole={NON_CASHIER_ROLES}>
                   <DashboardLayout>
                     <WarehouseShop />
                   </DashboardLayout>
@@ -88,7 +90,7 @@ function App() {
             <Route
               path="/dashboard/stock"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole={NON_CASHIER_ROLES}>
                   <DashboardLayout>
                     <Inventory />
                   </DashboardLayout>
@@ -99,7 +101,7 @@ function App() {
             <Route
               path="/dashboard/orders"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole={NON_CASHIER_ROLES}>
                   <DashboardLayout>
                     <OrdersPage />
                   </DashboardLayout>
@@ -132,7 +134,7 @@ function App() {
             <Route
               path="/dashboard/orders/:orderId"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole={NON_CASHIER_ROLES}>
                   <DashboardLayout>
                     <OrderDetailsPage />
                   </DashboardLayout>
@@ -180,7 +182,7 @@ function App() {
             <Route
               path="/dashboard/inventory/add"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole={NON_CASHIER_ROLES}>
                   <DashboardLayout>
                     <AddProduct />
                   </DashboardLayout>
@@ -190,7 +192,7 @@ function App() {
             <Route
               path="/dashboard/inventory/edit/:id"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole={NON_CASHIER_ROLES}>
                   <DashboardLayout>
                     <AddProduct />
                   </DashboardLayout>

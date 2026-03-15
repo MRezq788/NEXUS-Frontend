@@ -14,28 +14,13 @@ interface POSContextType {
   updateQuantity: (productId: string, quantity: number) => void;
   removeFromCart: (productId: string) => void;
   clearCart: () => void;
-  subtotal: number;
-  tax: number;
-  discount: number;
   total: number;
-  selectedTable: string | null;
-  setSelectedTable: (table: string | null) => void;
-  orderType: string;
-  setOrderType: (type: string) => void;
-  customerName: string;
-  setCustomerName: (name: string) => void;
-  promoCode: string;
-  setPromoCode: (code: string) => void;
 }
 
 const POSContext = createContext<POSContextType | undefined>(undefined);
 
 export function POSProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [selectedTable, setSelectedTable] = useState<string | null>(null);
-  const [orderType, setOrderType] = useState('Dine In');
-  const [customerName, setCustomerName] = useState('');
-  const [promoCode, setPromoCode] = useState('');
 
   const addToCart = (product: CashierCartProduct, quantity = 1, notes = '') => {
     setCartItems((prev) => {
@@ -69,7 +54,6 @@ export function POSProvider({ children }: { children: ReactNode }) {
 
   const clearCart = () => {
     setCartItems([]);
-    setPromoCode('');
   };
 
   const subtotal = cartItems.reduce(
@@ -77,9 +61,7 @@ export function POSProvider({ children }: { children: ReactNode }) {
     0
   );
 
-  const tax = subtotal * 0.1;
-  const discount = promoCode ? 1.0 : 0;
-  const total = subtotal + tax - discount;
+  const total = subtotal;
 
   return (
     <POSContext.Provider
@@ -89,18 +71,7 @@ export function POSProvider({ children }: { children: ReactNode }) {
         updateQuantity,
         removeFromCart,
         clearCart,
-        subtotal,
-        tax,
-        discount,
         total,
-        selectedTable,
-        setSelectedTable,
-        orderType,
-        setOrderType,
-        customerName,
-        setCustomerName,
-        promoCode,
-        setPromoCode,
       }}
     >
       {children}

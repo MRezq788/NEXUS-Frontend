@@ -14,12 +14,6 @@ export interface Product {
   description: string;
 }
 
-export interface RestaurantTable {
-  id: string;
-  table_number: string;
-  status: string;
-}
-
 export interface Order {
   id: string;
   order_number: string;
@@ -35,13 +29,4 @@ export interface Order {
   payment_method: string;
   created_at: string;
   updated_at: string;
-}
-
-export interface OrderItem {
-  id: string;
-  order_id: string;
-  product_id: string;
-  quantity: number;
-  price: number;
-  notes: string;
 }

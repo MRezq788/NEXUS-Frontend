@@ -33,7 +33,6 @@ function writePageCache<T>(key: string, data: T) {
 interface CashierOrderItem {
   id: string;
   total: number;
-  type: string;
   createdAt: string | Date | { _seconds?: number; seconds?: number };
 }
 
@@ -53,7 +52,7 @@ export function CashierOrders() {
     return window.localStorage.getItem(CASHIER_SIDEBAR_STORAGE_KEY) === '1';
   });
   const [orders, setOrders] = useState<CashierOrderItem[]>(() => readPageCache<CashierOrderItem[]>(CASHIER_ORDERS_CACHE_KEY)?.slice() ?? []);
-  const [isLoadingOrders, setIsLoadingOrders] = useState(() => !Boolean(readPageCache<CashierOrderItem[]>(CASHIER_ORDERS_CACHE_KEY)));
+  const [isLoadingOrders, setIsLoadingOrders] = useState(() => !readPageCache<CashierOrderItem[]>(CASHIER_ORDERS_CACHE_KEY));
   const [ordersError, setOrdersError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -89,7 +88,8 @@ export function CashierOrders() {
       }
     };
 
-    fetchCashierOrders(orders.length > 0);
+    const hasOrdersCache = !!readPageCache<CashierOrderItem[]>(CASHIER_ORDERS_CACHE_KEY);
+    fetchCashierOrders(hasOrdersCache);
   }, []);
 
   useEffect(() => {
@@ -142,7 +142,6 @@ export function CashierOrders() {
                   <thead className={isDark ? 'bg-[#18191b] text-gray-300' : 'bg-slate-50 text-gray-600'}>
                     <tr>
                       <th className="text-left px-6 py-3">Order ID</th>
-                      <th className="text-left px-6 py-3">Type</th>
                       <th className="text-left px-6 py-3">Total</th>
                       <th className="text-left px-6 py-3">Date</th>
                     </tr>
@@ -156,7 +155,6 @@ export function CashierOrders() {
                         }`}
                       >
                         <td className="px-6 py-4 font-medium">{order.id}</td>
-                        <td className="px-6 py-4 capitalize">{order.type || '-'}</td>
                         <td className="px-6 py-4">${Number(order.total || 0).toFixed(2)}</td>
                         <td className="px-6 py-4">{formatOrderDate(order.createdAt)}</td>
                       </tr>

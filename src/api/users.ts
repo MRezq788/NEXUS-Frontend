@@ -89,16 +89,7 @@ export interface CashierPosSaleItem {
 }
 
 export interface CashierPosSaleOrderPayload {
-  orderNumber: string;
-  subtotal: number;
-  tax: number;
-  discount: number;
   total: number;
-  orderType?: string;
-  tableId?: string | null;
-  customerName?: string;
-  promoCode?: string;
-  notes?: string;
 }
 
 export interface CashierPosSaleResult {

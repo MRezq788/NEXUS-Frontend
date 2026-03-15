@@ -8,7 +8,6 @@ import { ProductGrid } from '../components/Cashier/ProductGrid';
 import { OrderPanel } from '../components/Cashier/OrderPanel';
 import { ProductDetailModal } from '../components/Cashier/ProductDetailModal';
 import { SidebarMenu } from '../components/Cashier/SidebarMenu';
-import { mockTables } from '../lib/mockData';
 import type { Category } from '../lib/database.types';
 import { usersApi } from '../api';
 import type { AllocationHistoryEntry, CashierPosSaleOrderPayload } from '../api/users';
@@ -66,7 +65,6 @@ export function PointOfSale() {
     if (typeof window === 'undefined') return false;
     return window.localStorage.getItem(CASHIER_SIDEBAR_STORAGE_KEY) === '1';
   });
-  const [orderNumber, setOrderNumber] = useState('#1000');
   const [products, setProducts] = useState<CashierCatalogProduct[]>(() => readPageCache<PosInventoryCache>(POS_INVENTORY_CACHE_KEY)?.products.slice() ?? []);
   const [categories, setCategories] = useState<Category[]>(() => readPageCache<PosInventoryCache>(POS_INVENTORY_CACHE_KEY)?.categories ?? []);
   const [history, setHistory] = useState<AllocationHistoryEntry[]>(() => readPageCache<AllocationHistoryEntry[]>(POS_HISTORY_CACHE_KEY)?.slice() ?? []);
@@ -79,14 +77,7 @@ export function PointOfSale() {
     addToCart,
     clearCart,
     cartItems,
-    subtotal,
-    tax,
-    discount,
     total,
-    selectedTable,
-    orderType,
-    customerName,
-    promoCode,
   } = usePOS();
 
   const fetchCashierProducts = async (silent = false) => {
@@ -205,23 +196,11 @@ export function PointOfSale() {
       quantity: item.quantity,
     }));
 
-    const orderPayload: CashierPosSaleOrderPayload = {
-      orderNumber,
-      subtotal,
-      tax,
-      discount,
-      total,
-      orderType,
-      tableId: selectedTable,
-      customerName,
-      promoCode,
-    };
+    const orderPayload: CashierPosSaleOrderPayload = { total };
 
     setIsPlacingOrder(true);
     try {
       await usersApi.createCashierPosSale(saleItems, orderPayload);
-      const newOrderNumber = `#${(parseInt(orderNumber.slice(1)) + 1).toString().padStart(4, '0')}`;
-      setOrderNumber(newOrderNumber);
       clearCart();
       await fetchCashierProducts();
       alert('Order placed successfully!');
@@ -331,8 +310,6 @@ export function PointOfSale() {
         <div className="hidden md:flex h-full">
           <OrderPanel
             isDark={isDark}
-            tables={mockTables}
-            orderNumber={orderNumber}
             onPlaceOrder={handlePlaceOrder}
             isPlacingOrder={isPlacingOrder}
           />
