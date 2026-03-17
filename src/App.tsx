@@ -19,6 +19,8 @@ import { PointOfSale } from "./pages/PointOfSale.tsx";
 import { InventoryAllocation } from "./pages/InventoryAllocation";
 import { CashierInventory } from "./pages/CashierInventory.tsx";
 import { CashierOrders } from "./pages/CashierOrders.tsx";
+import BusinessOwnerBuilder from "./pages/BusinessOwnerBuilder";
+// import PublicStorefront from "./pages/PublicStorefront";
 
 function App() {
   return (
@@ -28,6 +30,9 @@ function App() {
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
+
+            {/* : Public Storefront Route (No protection, anyone can view) */}
+            {/* <Route path="/store/:businessId" element={<PublicStorefront />} /> */}
 
             <Route
               path="/dashboard"
@@ -197,6 +202,16 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
+            <Route
+              path="/website-builder"
+              element={
+                <ProtectedRoute requiredRole="business_owner">
+                  <BusinessOwnerBuilder />
+                </ProtectedRoute>
+              }
+            />
+
           </Routes>
         </Router>
       </ThemeProvider>
