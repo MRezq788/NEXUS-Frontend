@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { Puck, Data } from "@puckeditor/core";
+import { Puck, type Data } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
 import { config } from "../components/builder/config";
-// import { saveWebsiteLayout, getWebsiteLayout } from "../services/builder.api";
+import { saveWebsiteLayout, getWebsiteLayout } from "../services/builder.api";
 
 const initialData: Data = { content: [], root: {} };
 
