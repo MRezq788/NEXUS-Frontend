@@ -28,6 +28,54 @@ export interface UserRevenue {
   data: ChartData[];
 }
 
+export interface OwnerStore {
+  siteName: string;
+  owner: string;
+  store?: {
+    name?: string;
+    currency?: string;
+    shippingFee?: number;
+    [key: string]: unknown;
+  };
+  createdAt?: unknown;
+  updatedAt?: unknown;
+}
+
+export interface StoreAllocationVariant {
+  id: string;
+  quantity: number;
+  price?: number;
+  [key: string]: unknown;
+}
+
+export interface StoreAllocationProduct {
+  id: string;
+  name?: string;
+  description?: string;
+  category?: string;
+  basePrice?: number;
+  variants: StoreAllocationVariant[];
+  [key: string]: unknown;
+}
+
+export interface AllocateProductToStorePayload {
+  siteName: string;
+  productId: string;
+  variantId: string;
+  quantity: number;
+}
+
+export interface AllocateProductToStoreResult {
+  siteName: string;
+  productId: string;
+  variantId: string;
+  allocatedQuantity: number;
+  ownerRemainingVariantQuantity: number;
+  ownerRemainingProductQuantity: number;
+  siteVariantQuantity: number;
+  siteProductQuantity: number;
+}
+
 export interface InventoryAllocationPayload {
   cashierId: string;
   productId: string;
@@ -217,6 +265,37 @@ export const usersApi = {
       role: string;
       profileImageUrl?: string;
     }>(`/users/profile`);
+  },
+
+  getMyStores: async () => {
+    return fetchApi<{ stores: OwnerStore[] }>(`/users/stores`);
+  },
+
+  createStore: async (siteName: string, storeDisplayName?: string) => {
+    return fetchApi<{ store: OwnerStore }>(`/users/stores`, {
+      method: "POST",
+      body: {
+        siteName,
+        storeDisplayName,
+      },
+    });
+  },
+
+  getStoreAllocationOwnerProducts: async () => {
+    return fetchApi<{ products: StoreAllocationProduct[] }>(`/users/stores/products`);
+  },
+
+  getAllocatedProductsForStore: async (siteName: string) => {
+    return fetchApi<{ products: StoreAllocationProduct[] }>(
+      `/users/stores/${siteName}/allocated-products`,
+    );
+  },
+
+  allocateProductToStore: async (payload: AllocateProductToStorePayload) => {
+    return fetchApi<AllocateProductToStoreResult>(`/users/stores/allocate-product`, {
+      method: "POST",
+      body: payload as unknown as Record<string, unknown>,
+    });
   },
 
   getCashiers: async () => {
