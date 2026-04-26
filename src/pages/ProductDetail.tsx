@@ -17,6 +17,7 @@ interface ProductDetailProps {
       unitPrice?: number;
     },
   ) => void;
+  pageTitle?: string;
 }
 
 // ─── Main Component ──────────────────────────────────────────────────────────
@@ -25,6 +26,7 @@ export function ProductDetail({
   product,
   onBack,
   onAddToCart,
+  pageTitle,
 }: ProductDetailProps) {
   const { isDark } = useTheme();
   const [quantity, setQuantity] = useState(1);
@@ -137,7 +139,7 @@ export function ProductDetail({
         <h2
           className={`text-2xl sm:text-3xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
         >
-          Product Details
+          {pageTitle || "Product Details"}
         </h2>
       </div>
 

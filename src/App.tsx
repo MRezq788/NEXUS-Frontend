@@ -19,6 +19,7 @@ import { PointOfSale } from "./pages/PointOfSale.tsx";
 import { InventoryAllocation } from "./pages/InventoryAllocation";
 import { CashierInventory } from "./pages/CashierInventory.tsx";
 import { CashierOrders } from "./pages/CashierOrders.tsx";
+import { Recommendations } from "./pages/Recommendations";
 
 const NON_CASHIER_ROLES = ["business_owner", "warehouse"];
 
@@ -84,6 +85,17 @@ function App() {
                   </DashboardLayout>
                 </ProtectedRoute>
               }
+            />
+            
+            <Route 
+            path="/warehouses/recommendations" 
+            element={
+                <ProtectedRoute requiredRole={NON_CASHIER_ROLES}>
+                  <DashboardLayout>
+                    <Recommendations />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              } 
             />
 
             {/* New Stock Route for Warehouse Users */}
