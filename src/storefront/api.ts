@@ -1,5 +1,5 @@
 ﻿import { BASE_URL } from "../api/base";
-import type { Product, SiteOrder, SitePage, SiteUser } from "./types";
+import type { Product, SiteOrder, SitePage, SiteSettings, SiteUser } from "./types";
 
 const API_BASE = `${BASE_URL}/storefront`;
 
@@ -32,6 +32,9 @@ const request = async <T>(url: string, init?: RequestInit): Promise<T> => {
 };
 
 export const storefrontApi = {
+  getSiteSettings: (siteName: string) =>
+    request<SiteSettings>(`${API_BASE}/sites/${encodeURIComponent(siteName)}/settings`),
+
   listPages: (siteName: string) =>
     request<SitePage[]>(`${API_BASE}/sites/${encodeURIComponent(siteName)}/pages`),
 

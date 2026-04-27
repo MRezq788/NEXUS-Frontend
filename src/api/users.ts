@@ -35,6 +35,11 @@ export interface OwnerStore {
     name?: string;
     currency?: string;
     shippingFee?: number;
+    aiAssistant?: {
+      enabled?: boolean;
+      systemPrompt?: string;
+      updatedAt?: unknown;
+    };
     [key: string]: unknown;
   };
   createdAt?: unknown;
@@ -279,6 +284,19 @@ export const usersApi = {
         storeDisplayName,
       },
     });
+  },
+
+  updateStoreAiAssistant: async (
+    siteName: string,
+    payload: { enabled: boolean; systemPrompt?: string },
+  ) => {
+    return fetchApi<{ store: OwnerStore }>(
+      `/users/stores/${encodeURIComponent(siteName)}/ai-assistant`,
+      {
+        method: "PATCH",
+        body: payload,
+      },
+    );
   },
 
   getStoreAllocationOwnerProducts: async () => {

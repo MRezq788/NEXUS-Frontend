@@ -3,7 +3,7 @@ export const BASE_URL = envBaseUrl ?? "http://localhost:3000/api";
 
 interface FetchOptions {
   params?: Record<string, string | number | undefined>;
-  method?: "GET" | "POST" | "PUT" | "DELETE";
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: Record<string, unknown>;
 }
 

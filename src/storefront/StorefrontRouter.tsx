@@ -11,9 +11,10 @@ import {
 } from "react-router-dom";
 import { storefrontApi } from "./api";
 import { ProductCard } from "./components/ProductCard";
+import { StorefrontAiAssistant } from "./components/StorefrontAiAssistant";
 import { StorefrontSessionProvider, useStorefrontSession } from "./context/StorefrontSessionContext";
 import { puckConfig } from "./puckConfig";
-import type { Product, SiteAddress, SiteOrder, SitePage } from "./types";
+import type { Product, SiteAddress, SiteOrder, SitePage, SiteSettings } from "./types";
 
 const defaultPageData = { content: [], root: { props: {} } };
 
@@ -846,15 +847,48 @@ const PageBySlug = () => {
 
 export const StorefrontRouter = () => {
   const { siteName = "" } = useParams();
+  const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const run = async () => {
+      try {
+        const settings = await storefrontApi.getSiteSettings(siteName);
+        if (mounted) {
+          setSiteSettings(settings);
+        }
+      } catch {
+        if (mounted) {
+          setSiteSettings(null);
+        }
+      }
+    };
+
+    if (siteName) {
+      void run();
+    }
+
+    return () => {
+      mounted = false;
+    };
+  }, [siteName]);
 
   if (!siteName) {
     return <div className="p-6">Missing site</div>;
   }
 
+  const storeName = siteSettings?.store?.name || siteName;
+
   return (
     <StorefrontSessionProvider siteName={siteName}>
       <div className="min-h-screen bg-stone-50 text-stone-900">
         <StorefrontShell />
+        <StorefrontAiAssistant
+          siteName={siteName}
+          storeName={storeName}
+          settings={siteSettings?.store?.aiAssistant}
+        />
       </div>
     </StorefrontSessionProvider>
   );

@@ -17,6 +17,23 @@ export interface Product {
   [key: string]: unknown;
 }
 
+export interface AiAssistantSettings {
+  enabled?: boolean;
+  systemPrompt?: string;
+  updatedAt?: unknown;
+}
+
+export interface SiteSettings {
+  siteName: string;
+  store?: {
+    name?: string;
+    currency?: string;
+    shippingFee?: number;
+    aiAssistant?: AiAssistantSettings;
+    [key: string]: unknown;
+  };
+}
+
 export interface PuckData {
   content: Array<{
     type: string;
