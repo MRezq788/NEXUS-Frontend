@@ -136,10 +136,6 @@ export function Recommendations() {
   // View state: "grid" or "detail"
   const [selectedProduct, setSelectedProduct] = useState<RecommendedProduct | null>(null);
 
-  // Search
-  const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -148,18 +144,6 @@ export function Recommendations() {
   const [ordering, setOrdering] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
-
-  // ── Debounce search ────────────────────────────────────────────────────────
-
-  useEffect(() => {
-    const handler = setTimeout(() => setDebouncedSearch(searchTerm), 400);
-    return () => clearTimeout(handler);
-  }, [searchTerm]);
-
-  // Reset pagination when search changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [debouncedSearch]);
 
   // ── Fetch recommendations ──────────────────────────────────────────────────
 
@@ -204,17 +188,7 @@ export function Recommendations() {
 
   // ── Filtered & paginated products ───────────────────────────────────────────
 
-  const filteredProducts = debouncedSearch
-    ? products.filter((p) => {
-        const searchLower = debouncedSearch.toLowerCase();
-        return (
-          p.name.toLowerCase().includes(searchLower) ||
-          p.description.toLowerCase().includes(searchLower) ||
-          p.category.toLowerCase().includes(searchLower) ||
-          p.warehouseName.toLowerCase().includes(searchLower)
-        );
-      })
-    : products;
+  const filteredProducts = products;
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
   const paginatedProducts = filteredProducts.slice(
@@ -301,32 +275,60 @@ export function Recommendations() {
       const user = auth.currentUser;
       const token = await user?.getIdToken();
 
-      const body = {
-        buyerEmail: user?.email || "",
-        products: cart.map((item) => ({
-          productId: item.product.id,
-          quantity: item.quantity,
-          price: item.unitPrice,
-          variantId: item.variantId,
-          variantAttributes: item.variantAttributes,
-          productName: item.product.name,
-          productImage: item.product.images?.[0] || "",
-          unit: item.product.unit,
-          sellerEmail: item.product.warehouseEmail,
-          lineTotal: Math.round(item.unitPrice * item.quantity * 100) / 100,
-        })),
-        total: Math.round(totalPrice * 100) / 100,
-      };
+      // Group cart items by warehouse
+      const ordersByWarehouse = new Map<string, CartItem[]>();
+      for (const item of cart) {
+        const warehouseEmail = item.product.warehouseEmail;
+        if (!ordersByWarehouse.has(warehouseEmail)) {
+          ordersByWarehouse.set(warehouseEmail, []);
+        }
+        ordersByWarehouse.get(warehouseEmail)!.push(item);
+      }
 
-      const res = await fetch(`${API_URL}/api/warehouse-shop/orders`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-          "x-user-email": user?.email || "",
-        },
-        body: JSON.stringify(body),
+      // Build orders array
+      const orders = Array.from(ordersByWarehouse.entries()).map(([sellerEmail, items]) => {
+        const orderTotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+        return {
+          buyerEmail: user?.email || "",
+          sellerEmail,  // ← At ORDER level ✓
+          total: Math.round(orderTotal * 100) / 100,
+          products: items.map((item) => ({
+            productId: item.product.id,
+            quantity: item.quantity,
+            price: item.unitPrice,
+            variantId: item.variantId,
+            variantAttributes: item.variantAttributes,
+            productName: item.product.name,
+            productImage: item.product.images?.[0] || "",
+            unit: item.product.unit,
+            lineTotal: Math.round(item.unitPrice * item.quantity * 100) / 100,
+          })),
+        };
       });
+
+      // Send to bulk endpoint if multiple warehouses, single if one
+      let res;
+      if (orders.length === 1) {
+        res = await fetch(`${API_URL}/api/warehouse-shop/orders`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+            "x-user-email": user?.email || "",
+          },
+          body: JSON.stringify(orders[0]),
+        });
+      } else {
+        res = await fetch(`${API_URL}/api/warehouse-shop/orders/bulk`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+            "x-user-email": user?.email || "",
+          },
+          body: JSON.stringify({ orders }),
+        });
+      }
 
       if (res.status === 201 || res.ok) {
         setOrderSuccess(true);
@@ -442,24 +444,6 @@ export function Recommendations() {
               </div>
             </div>
 
-            {/* Search */}
-            <div className="relative max-w-md">
-              <div className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
-                <IconComponent name="search" isDark={isDark} />
-              </div>
-              <input
-                type="text"
-                placeholder="Search recommendations..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className={`w-full pl-10 pr-4 py-2.5 rounded-xl text-sm transition-colors ${
-                  isDark
-                    ? "bg-[#18191b] border border-gray-800 text-white placeholder-gray-500 focus:border-blue-500"
-                    : "bg-white border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-500"
-                } outline-none`}
-              />
-            </div>
-
             {/* Products Grid */}
             {loading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -488,7 +472,7 @@ export function Recommendations() {
               </div>
             ) : filteredProducts.length === 0 ? (
               <div className={`text-center py-16 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
-                {debouncedSearch ? "No products match your search" : "No recommendations available"}
+                "No recommendations available"
               </div>
             ) : (
               <>
