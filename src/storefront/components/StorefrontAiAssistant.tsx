@@ -82,9 +82,9 @@ const ProductResultCard = ({ match, siteName }: { match: ProductMatch; siteName:
   const quantity = Number(object.totalQuantity ?? firstVariant?.quantity ?? 0);
 
   return (
-    <article className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+    <article className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex gap-3 p-3">
-        <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-stone-100">
+        <div className="h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-stone-100">
           {image ? (
             <img src={image} alt={product.name || "Product"} className="h-full w-full object-cover" />
           ) : (
@@ -94,10 +94,10 @@ const ProductResultCard = ({ match, siteName }: { match: ProductMatch; siteName:
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <h4 className="truncate text-sm font-semibold text-stone-950">
+          <h4 className="truncate text-base font-semibold text-stone-950">
             {product.name || productId || "Product"}
           </h4>
-          <p className="mt-1 line-clamp-2 text-xs text-stone-500">{product.description}</p>
+          <p className="mt-1 line-clamp-2 text-sm text-stone-500">{product.description}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
             <span className="rounded-full bg-emerald-50 px-2 py-1 font-semibold text-emerald-700">
               {currency} {price.toFixed(2)}
@@ -218,20 +218,25 @@ export function StorefrontAiAssistant({ siteName, storeName, settings }: Props) 
   return (
     <div className="fixed bottom-4 right-4 z-50 sm:bottom-6 sm:right-6">
       <div
-        className={`mb-3 w-[calc(100vw-2rem)] max-w-[390px] origin-bottom-right overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-2xl transition-all duration-300 ${
+        className={`mb-3 flex h-[min(760px,calc(100vh-7rem))] w-[calc(100vw-2rem)] max-w-[520px] origin-bottom-right flex-col overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-2xl shadow-stone-950/20 transition-all duration-300 ${
           open ? "translate-y-0 scale-100 opacity-100" : "pointer-events-none translate-y-4 scale-95 opacity-0"
         }`}
       >
-        <div className="bg-stone-950 px-4 py-3 text-white">
+        <div className="bg-stone-950 px-5 py-4 text-white">
           <div className="flex items-center justify-between gap-3">
-            <div>
-              <h3 className="text-sm font-semibold">Shopping Assistant</h3>
-              <p className="text-xs text-stone-300">{storeName || siteName}</p>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-500 text-sm font-black text-white shadow-lg shadow-emerald-950/20">
+                AI
+              </div>
+              <div>
+                <h3 className="text-base font-semibold">Shopping Assistant</h3>
+                <p className="text-xs text-stone-300">{storeName || siteName}</p>
+              </div>
             </div>
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="h-8 w-8 rounded-full bg-white/10 text-lg leading-none transition hover:bg-white/20"
+              className="h-9 w-9 rounded-full bg-white/10 text-lg leading-none transition hover:bg-white/20"
               aria-label="Close assistant"
             >
               x
@@ -239,11 +244,11 @@ export function StorefrontAiAssistant({ siteName, storeName, settings }: Props) 
           </div>
         </div>
 
-        <div ref={scrollRef} className="max-h-[55vh] space-y-3 overflow-y-auto bg-stone-50 p-3">
+        <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto bg-stone-50 p-4">
           {messages.map((message) => (
             <div key={message.id} className={message.role === "user" ? "ml-8 text-right" : "mr-4"}>
               <div
-                className={`inline-block rounded-2xl px-3 py-2 text-sm ${
+                className={`inline-block max-w-[92%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
                   message.role === "user"
                     ? "bg-emerald-600 text-white"
                     : "border border-stone-200 bg-white text-stone-800"
@@ -252,7 +257,7 @@ export function StorefrontAiAssistant({ siteName, storeName, settings }: Props) 
                 {message.content}
               </div>
               {!!message.products?.length && (
-                <div className="mt-2 space-y-2 text-left">
+                <div className="mt-3 space-y-3 text-left">
                   {message.products.map((product, index) => (
                     <ProductResultCard
                       key={product.id || product.product_id || index}
@@ -265,7 +270,7 @@ export function StorefrontAiAssistant({ siteName, storeName, settings }: Props) 
             </div>
           ))}
           {loading && (
-            <div className="mr-10 rounded-2xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-500">
+            <div className="mr-10 inline-flex rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-500 shadow-sm">
               <span className="inline-flex gap-1">
                 <span className="h-2 w-2 animate-bounce rounded-full bg-emerald-500" />
                 <span className="h-2 w-2 animate-bounce rounded-full bg-emerald-500 [animation-delay:120ms]" />
@@ -276,9 +281,9 @@ export function StorefrontAiAssistant({ siteName, storeName, settings }: Props) 
           {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-xs text-red-600">{error}</p>}
         </div>
 
-        <div className="border-t border-stone-200 bg-white p-3">
+        <div className="border-t border-stone-200 bg-white p-4">
           <form
-            className="flex gap-2"
+            className="flex gap-2 rounded-2xl border border-stone-200 bg-stone-50 p-1.5 transition focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100"
             onSubmit={(event) => {
               event.preventDefault();
               void sendMessage();
@@ -288,12 +293,12 @@ export function StorefrontAiAssistant({ siteName, storeName, settings }: Props) 
               value={input}
               onChange={(event) => setInput(event.target.value)}
               placeholder="Ask for products..."
-              className="min-w-0 flex-1 rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+              className="min-w-0 flex-1 rounded-xl bg-transparent px-3 py-2 text-sm text-stone-900 outline-none placeholder:text-stone-400"
             />
             <button
               type="submit"
               disabled={loading || !input.trim()}
-              className="rounded-xl bg-stone-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-stone-800 disabled:opacity-50"
+              className="rounded-xl bg-stone-950 px-5 py-2 text-sm font-semibold text-white transition hover:bg-stone-800 disabled:opacity-50"
             >
               Send
             </button>
@@ -304,7 +309,7 @@ export function StorefrontAiAssistant({ siteName, storeName, settings }: Props) 
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
-        className="ml-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-600 text-2xl text-white shadow-xl shadow-emerald-900/20 transition hover:-translate-y-1 hover:bg-emerald-700"
+        className="ml-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-600 text-lg font-black text-white shadow-xl shadow-emerald-900/20 transition hover:-translate-y-1 hover:bg-emerald-700"
         aria-label="Open AI assistant"
       >
         AI
