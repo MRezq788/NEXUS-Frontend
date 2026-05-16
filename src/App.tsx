@@ -23,6 +23,7 @@ import { BuilderPage } from "./storefront/BuilderPage";
 import { StorefrontRouter } from "./storefront/StorefrontRouter";
 import { MyStoresPage } from "./pages/MyStoresPage";
 import { StoreProductAllocationPage } from "./pages/StoreProductAllocationPage";
+import { Recommendations } from "./pages/Recommendations";
 
 const NON_CASHIER_ROLES = ["business_owner", "warehouse"];
 
@@ -88,6 +89,17 @@ function App() {
                   </DashboardLayout>
                 </ProtectedRoute>
               }
+            />
+            
+            <Route 
+            path="/warehouses/recommendations" 
+            element={
+                <ProtectedRoute requiredRole={NON_CASHIER_ROLES}>
+                  <DashboardLayout>
+                    <Recommendations />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              } 
             />
 
             {/* New Stock Route for Warehouse Users */}

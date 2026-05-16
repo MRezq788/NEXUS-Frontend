@@ -6,6 +6,7 @@ interface OrderItem {
   id: string;
   total: number;
   type: string;
+  status?: string; // Added status field
   createdAt: Date | string;
 }
 
@@ -194,6 +195,20 @@ export function BusinessOwnerOrdersPage() {
                   >
                     {order.type.toUpperCase()}
                   </span>
+                  
+                  {/* NEW: Only show status badge if the order type is bought */}
+                  {order.type === "bought" && order.status && (
+                    <span
+                      className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                        isDark
+                          ? "bg-blue-500/20 text-blue-300"
+                          : "bg-blue-50 text-blue-700"
+                      }`}
+                    >
+                      {order.status.toUpperCase()}
+                    </span>
+                  )}
+
                   <p
                     className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
                   >
