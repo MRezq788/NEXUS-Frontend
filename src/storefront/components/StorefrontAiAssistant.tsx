@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
 import { Link } from "react-router-dom";
+import remarkGfm from "remark-gfm";
 import type { AiAssistantSettings } from "../types";
 
 type ChatRole = "user" | "assistant";
@@ -129,6 +131,29 @@ const ProductResultCard = ({ match, siteName }: { match: ProductMatch; siteName:
   );
 };
 
+const AssistantMarkdown = ({ content }: { content: string }) => (
+  <ReactMarkdown
+    remarkPlugins={[remarkGfm]}
+    components={{
+      p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+      strong: ({ children }) => <strong className="font-semibold text-stone-950">{children}</strong>,
+      ul: ({ children }) => <ul className="my-2 list-disc space-y-1 pl-4">{children}</ul>,
+      ol: ({ children }) => <ol className="my-2 list-decimal space-y-1 pl-4">{children}</ol>,
+      li: ({ children }) => <li className="pl-1">{children}</li>,
+      a: ({ children }) => (
+        <span className="font-medium text-emerald-700">{children}</span>
+      ),
+      code: ({ children }) => (
+        <code className="rounded bg-stone-100 px-1 py-0.5 text-[0.85em] text-stone-800">
+          {children}
+        </code>
+      ),
+    }}
+  >
+    {content}
+  </ReactMarkdown>
+);
+
 export function StorefrontAiAssistant({ siteName, storeName, settings }: Props) {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
@@ -199,6 +224,22 @@ export function StorefrontAiAssistant({ siteName, storeName, settings }: Props) 
 
       const payload = (await response.json()) as ChatbotResponse;
       const products = payload.objectsResult || payload.matches || [];
+      console.groupCollapsed(
+        `[Storefront AI] matches for "${text}" (${products.length})`,
+      );
+      console.log("Full chatbot response:", payload);
+      products.forEach((match, index) => {
+        console.log(`Match ${index + 1}`, {
+          similarity: match.similarity,
+          productId: match.product_id || match.object?.id,
+          siteName: match.site_name,
+          product: match.object?.product,
+          variants: match.object?.variants,
+          totalQuantity: match.object?.totalQuantity,
+          fullMatch: match,
+        });
+      });
+      console.groupEnd();
       setMessages((current) => [
         ...current,
         {
@@ -254,7 +295,11 @@ export function StorefrontAiAssistant({ siteName, storeName, settings }: Props) 
                     : "border border-stone-200 bg-white text-stone-800"
                 }`}
               >
-                {message.content}
+                {message.role === "assistant" ? (
+                  <AssistantMarkdown content={message.content} />
+                ) : (
+                  message.content
+                )}
               </div>
               {!!message.products?.length && (
                 <div className="mt-3 space-y-3 text-left">
