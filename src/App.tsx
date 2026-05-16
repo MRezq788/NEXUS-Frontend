@@ -19,6 +19,10 @@ import { PointOfSale } from "./pages/PointOfSale.tsx";
 import { InventoryAllocation } from "./pages/InventoryAllocation";
 import { CashierInventory } from "./pages/CashierInventory.tsx";
 import { CashierOrders } from "./pages/CashierOrders.tsx";
+import { BuilderPage } from "./storefront/BuilderPage";
+import { StorefrontRouter } from "./storefront/StorefrontRouter";
+import { MyStoresPage } from "./pages/MyStoresPage";
+import { StoreProductAllocationPage } from "./pages/StoreProductAllocationPage";
 import { Recommendations } from "./pages/Recommendations";
 
 const NON_CASHIER_ROLES = ["business_owner", "warehouse"];
@@ -192,6 +196,26 @@ function App() {
               }
             />
             <Route
+              path="/my-stores"
+              element={
+                <ProtectedRoute requiredRole="business_owner">
+                  <DashboardLayout>
+                    <MyStoresPage />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/my-stores/:siteName/allocation"
+              element={
+                <ProtectedRoute requiredRole="business_owner">
+                  <DashboardLayout>
+                    <StoreProductAllocationPage />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/dashboard/inventory/add"
               element={
                 <ProtectedRoute requiredRole={NON_CASHIER_ROLES}>
@@ -211,6 +235,10 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
+            <Route path="/builder/:siteName" element={<BuilderPage />} />
+            <Route path="/builder/:siteName/:pageId" element={<BuilderPage />} />
+            <Route path="/:siteName/*" element={<StorefrontRouter />} />
           </Routes>
         </Router>
       </ThemeProvider>

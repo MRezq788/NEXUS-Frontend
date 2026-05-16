@@ -103,6 +103,22 @@ const IconComponent = ({ name, isDark }: { name: string; isDark: boolean }) => {
         />
       </svg>
     ),
+    "My Stores": (
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke={color}
+        strokeWidth={2}
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M3 7l2-3h14l2 3v2a2 2 0 01-2 2v8a2 2 0 01-2 2H7a2 2 0 01-2-2v-8a2 2 0 01-2-2V7z"
+        />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 14h6" />
+      </svg>
+    ),
     Settings: (
       <svg
         className="w-5 h-5"
