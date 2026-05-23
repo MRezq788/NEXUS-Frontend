@@ -84,6 +84,9 @@ const HeroBlock = ({
   ctaLink,
   bgImage,
   bgColor,
+  textColor,
+  buttonBgColor,
+  buttonTextColor,
 }: Record<string, unknown>) => {
   const { siteName = "" } = useParams();
 
@@ -99,7 +102,7 @@ const HeroBlock = ({
         backgroundPosition: "center",
       }}
     >
-      <div className="mx-auto max-w-4xl text-center text-stone-900">
+      <div className="mx-auto max-w-4xl text-center" style={{ color: String(textColor || "#111827") }}>
         <h1 className="text-4xl font-bold md:text-6xl">
           {String(heading || "Build your dream storefront")}
         </h1>
@@ -108,7 +111,11 @@ const HeroBlock = ({
         </p>
         <Link
           to={`/${siteName}${String(ctaLink || "/products")}`}
-          className="mt-8 inline-block rounded-full bg-stone-900 px-6 py-3 text-sm font-semibold text-white"
+          className="mt-8 inline-block rounded-full px-6 py-3 text-sm font-semibold"
+          style={{
+            backgroundColor: String(buttonBgColor || "#047857"),
+            color: String(buttonTextColor || "#ffffff"),
+          }}
         >
           {String(ctaText || "Start shopping")}
         </Link>
@@ -118,9 +125,12 @@ const HeroBlock = ({
 };
 
 const ProductCarouselBlock = ({
+  title,
   category,
   maxItems,
   showPrice,
+  bgColor,
+  titleColor,
 }: Record<string, unknown>) => {
   const products = useSiteProducts(
     String(category || ""),
@@ -130,11 +140,17 @@ const ProductCarouselBlock = ({
   console.log(products);
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-10">
-      <h2 className="mb-4 text-2xl font-bold text-stone-900">
-        Featured products
+    <section
+      className="px-4 py-10"
+      style={{ backgroundColor: String(bgColor || "transparent") }}
+    >
+      <h2
+        className="mx-auto mb-4 max-w-6xl text-2xl font-bold"
+        style={{ color: String(titleColor || "#111827") }}
+      >
+        {String(title || "Featured products")}
       </h2>
-      <div className="flex gap-4 overflow-x-auto pb-2">
+      <div className="mx-auto flex max-w-6xl gap-4 overflow-x-auto pb-2">
         {products.map((product) => (
           <div key={product.id} className="min-w-[260px] max-w-[260px]">
             <ProductCard product={product} showPrice={finalShowPrice} />
@@ -146,11 +162,14 @@ const ProductCarouselBlock = ({
 };
 
 const ProductGridBlock = ({
+  title,
   category,
   columns,
   showPrice,
   showCartButton,
   gap,
+  bgColor,
+  titleColor,
 }: Record<string, unknown>) => {
   const products = useSiteProducts(String(category || ""));
   const finalColumns = Math.max(1, Math.min(6, Number(columns || 3)));
@@ -168,11 +187,17 @@ const ProductGridBlock = ({
   const cardGap = Math.max(0, Math.min(64, Number(gap || 16)));
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-10">
-      <h2 className="mb-4 text-2xl font-bold text-stone-900">
-        Shop collection
+    <section
+      className="px-4 py-10"
+      style={{ backgroundColor: String(bgColor || "transparent") }}
+    >
+      <h2
+        className="mx-auto mb-4 max-w-6xl text-2xl font-bold"
+        style={{ color: String(titleColor || "#111827") }}
+      >
+        {String(title || "Shop collection")}
       </h2>
-      <div className={`grid ${gridClass}`} style={{ gap: `${cardGap}px` }}>
+      <div className={`mx-auto grid max-w-6xl ${gridClass}`} style={{ gap: `${cardGap}px` }}>
         {products.map((product) => (
           <ProductCard
             key={product.id}
@@ -190,6 +215,9 @@ const FeaturedProductBlock = ({
   productId,
   layout,
   showDescription,
+  bgColor,
+  textColor,
+  accentColor,
 }: Record<string, unknown>) => {
   const { siteName = "" } = useParams();
   const [product, setProduct] = useState<Product | null>(null);
@@ -225,7 +253,11 @@ const FeaturedProductBlock = ({
   return (
     <section className="mx-auto max-w-5xl px-4 py-10">
       <div
-        className={`rounded-2xl border border-amber-100 bg-white p-6 ${horizontal ? "grid items-center gap-6 md:grid-cols-2" : ""}`}
+        className={`rounded-2xl border border-black/5 p-6 shadow-sm ${horizontal ? "grid items-center gap-6 md:grid-cols-2" : ""}`}
+        style={{
+          backgroundColor: String(bgColor || "#ffffff"),
+          color: String(textColor || "#111827"),
+        }}
       >
         <img
           src={
@@ -236,16 +268,17 @@ const FeaturedProductBlock = ({
           className="aspect-[4/3] w-full rounded-xl object-cover"
         />
         <div>
-          <h3 className="text-3xl font-bold text-stone-900">{product.name}</h3>
+          <h3 className="text-3xl font-bold">{product.name}</h3>
           {Boolean(showDescription ?? true) && (
-            <p className="mt-3 text-stone-600">{product.description}</p>
+            <p className="mt-3 opacity-75">{product.description}</p>
           )}
-          <p className="mt-4 text-xl font-semibold text-amber-700">
+          <p className="mt-4 text-xl font-semibold" style={{ color: String(accentColor || "#b45309") }}>
             EGP {Number(product.price || 0).toFixed(2)}
           </p>
           <Link
             to={`/${siteName}/products/${product.id}`}
-            className="mt-4 inline-block rounded-full bg-stone-900 px-5 py-2 text-sm font-semibold text-white"
+            className="mt-4 inline-block rounded-full px-5 py-2 text-sm font-semibold text-white"
+            style={{ backgroundColor: String(accentColor || "#047857") }}
           >
             View product
           </Link>
@@ -261,14 +294,20 @@ const TextBlock = ({
   weight,
   color,
   align,
+  bgColor,
+  padding,
 }: Record<string, unknown>) => (
   <section
-    className="mx-auto max-w-4xl px-4 py-8"
+    className="px-4"
     style={{
+      backgroundColor: String(bgColor || "transparent"),
+      paddingTop: `${Number(padding || 32)}px`,
+      paddingBottom: `${Number(padding || 32)}px`,
       textAlign: String(align || "left") as "left" | "center" | "right",
     }}
   >
     <p
+      className="mx-auto max-w-4xl"
       style={{
         fontSize: `${Number(fontSize || 20)}px`,
         fontWeight: Number(weight || 500),
@@ -302,7 +341,7 @@ const ImageBlock = ({
   </section>
 );
 
-const ImageGalleryBlock = ({ images, columns }: Record<string, unknown>) => {
+const ImageGalleryBlock = ({ images, columns, gap, borderRadius }: Record<string, unknown>) => {
   const list = String(images || "")
     .split("\n")
     .filter(Boolean);
@@ -316,15 +355,19 @@ const ImageGalleryBlock = ({ images, columns }: Record<string, unknown>) => {
           ? "grid-cols-1 md:grid-cols-3"
           : "grid-cols-1 md:grid-cols-4";
 
+  const finalGap = Math.max(0, Math.min(64, Number(gap || 12)));
+  const finalRadius = Math.max(0, Math.min(48, Number(borderRadius || 16)));
+
   return (
     <section className="mx-auto max-w-6xl px-4 py-8">
-      <div className={`grid gap-3 ${className}`}>
+      <div className={`grid ${className}`} style={{ gap: `${finalGap}px` }}>
         {list.map((url) => (
           <img
             key={url}
             src={url}
             alt="Gallery"
-            className="aspect-square w-full rounded-xl object-cover"
+            className="aspect-square w-full object-cover"
+            style={{ borderRadius: `${finalRadius}px` }}
           />
         ))}
       </div>
@@ -364,8 +407,8 @@ const FooterBlock = ({
     <footer
       className="px-4 py-10"
       style={{
-        backgroundColor: String(bgColor || "#111827"),
-        color: String(textColor || "#ffffff"),
+        backgroundColor: String(bgColor || "#f8fafc"),
+        color: String(textColor || "#111827"),
       }}
     >
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 text-sm">
@@ -406,7 +449,14 @@ const VideoBlock = ({ url, aspectRatio }: Record<string, unknown>) => {
   );
 };
 
-const TestimonialsBlock = ({ reviews, columns }: Record<string, unknown>) => {
+const TestimonialsBlock = ({
+  reviews,
+  columns,
+  heading,
+  bgColor,
+  cardBgColor,
+  textColor,
+}: Record<string, unknown>) => {
   const list = String(
     reviews || "Amazing quality|Fast shipping|Great support",
   ).split("|");
@@ -419,15 +469,25 @@ const TestimonialsBlock = ({ reviews, columns }: Record<string, unknown>) => {
         : "grid-cols-1 md:grid-cols-3";
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-10">
-      <h2 className="mb-4 text-2xl font-bold text-stone-900">
-        What customers say
+    <section
+      className="px-4 py-10"
+      style={{ backgroundColor: String(bgColor || "transparent") }}
+    >
+      <h2
+        className="mx-auto mb-4 max-w-6xl text-2xl font-bold"
+        style={{ color: String(textColor || "#111827") }}
+      >
+        {String(heading || "What customers say")}
       </h2>
-      <div className={`grid gap-4 ${className}`}>
+      <div className={`mx-auto grid max-w-6xl gap-4 ${className}`}>
         {list.map((review) => (
           <blockquote
             key={review}
-            className="rounded-2xl border border-amber-100 bg-white p-4 text-stone-700"
+            className="rounded-2xl border border-black/5 p-4 shadow-sm"
+            style={{
+              backgroundColor: String(cardBgColor || "#ffffff"),
+              color: String(textColor || "#374151"),
+            }}
           >
             "{review}"
           </blockquote>
