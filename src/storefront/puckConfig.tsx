@@ -501,10 +501,20 @@ const NewsletterBlock = ({
   heading,
   placeholder,
   buttonText,
+  bgColor,
+  textColor,
+  buttonBgColor,
+  buttonTextColor,
 }: Record<string, unknown>) => (
   <section className="mx-auto max-w-4xl px-4 py-10">
-    <div className="rounded-2xl bg-amber-100/70 p-6">
-      <h2 className="text-2xl font-bold text-stone-900">
+    <div
+      className="rounded-2xl p-6"
+      style={{
+        backgroundColor: String(bgColor || "#fef3c7"),
+        color: String(textColor || "#111827"),
+      }}
+    >
+      <h2 className="text-2xl font-bold">
         {String(heading || "Join our newsletter")}
       </h2>
       <div className="mt-4 flex gap-2">
@@ -514,7 +524,11 @@ const NewsletterBlock = ({
         />
         <button
           type="button"
-          className="rounded-lg bg-stone-900 px-4 text-sm font-semibold text-white"
+          className="rounded-lg px-4 text-sm font-semibold"
+          style={{
+            backgroundColor: String(buttonBgColor || "#047857"),
+            color: String(buttonTextColor || "#ffffff"),
+          }}
         >
           {String(buttonText || "Subscribe")}
         </button>
@@ -527,6 +541,8 @@ const CountdownBlock = ({
   targetDate,
   label,
   colorScheme,
+  bgColor,
+  textColor,
 }: Record<string, unknown>) => {
   const [remaining, setRemaining] = useState("00d 00h 00m 00s");
 
@@ -559,7 +575,13 @@ const CountdownBlock = ({
 
   return (
     <section className="mx-auto max-w-4xl px-4 py-10">
-      <div className={`rounded-2xl p-6 text-center ${classes}`}>
+      <div
+        className={`rounded-2xl p-6 text-center ${classes}`}
+        style={{
+          backgroundColor: bgColor ? String(bgColor) : undefined,
+          color: textColor ? String(textColor) : undefined,
+        }}
+      >
         <h2 className="text-2xl font-bold">
           {String(label || "Sale ends in")}
         </h2>
@@ -571,6 +593,7 @@ const CountdownBlock = ({
 
 const ContainerBlock = ({
   bgColor,
+  textColor,
   padding,
   border,
   maxWidth,
@@ -580,12 +603,13 @@ const ContainerBlock = ({
     className="mx-auto px-4"
     style={{
       backgroundColor: String(bgColor || "transparent"),
+      color: String(textColor || "#4b5563"),
       padding: `${Number(padding || 24)}px`,
       border: border ? `1px solid ${String(border)}` : undefined,
       maxWidth: `${Number(maxWidth || 1200)}px`,
     }}
   >
-    <p className="text-stone-600">{String(content || "Container section")}</p>
+    <p>{String(content || "Container section")}</p>
   </section>
 );
 
@@ -622,6 +646,9 @@ export const puckConfig: Config = {
         ctaLink: { type: "text" },
         bgImage: { type: "text" },
         bgColor: { type: "text" },
+        textColor: { type: "text" },
+        buttonBgColor: { type: "text" },
+        buttonTextColor: { type: "text" },
       },
       defaultProps: {
         heading: "Season launch",
@@ -630,11 +657,15 @@ export const puckConfig: Config = {
         ctaLink: "/products",
         bgImage: "",
         bgColor: "#efe6db",
+        textColor: "#111827",
+        buttonBgColor: "#047857",
+        buttonTextColor: "#ffffff",
       },
       render: (props: Record<string, unknown>) => <HeroBlock {...props} />,
     },
     ProductCarousel: {
       fields: {
+        title: { type: "text" },
         category: { type: "text" },
         maxItems: { type: "number", min: 1, max: 20 },
         showPrice: {
@@ -644,14 +675,24 @@ export const puckConfig: Config = {
             { label: "No", value: false },
           ],
         },
+        bgColor: { type: "text" },
+        titleColor: { type: "text" },
       },
-      defaultProps: { category: "", maxItems: 8, showPrice: true },
+      defaultProps: {
+        title: "Featured products",
+        category: "",
+        maxItems: 8,
+        showPrice: true,
+        bgColor: "transparent",
+        titleColor: "#111827",
+      },
       render: (props: Record<string, unknown>) => (
         <ProductCarouselBlock {...props} />
       ),
     },
     ProductGrid: {
       fields: {
+        title: { type: "text" },
         category: { type: "text" },
         columns: { type: "number", min: 1, max: 6 },
         showPrice: {
@@ -669,13 +710,18 @@ export const puckConfig: Config = {
           ],
         },
         gap: { type: "number", min: 0, max: 64 },
+        bgColor: { type: "text" },
+        titleColor: { type: "text" },
       },
       defaultProps: {
+        title: "Shop collection",
         category: "",
         columns: 3,
         showPrice: true,
         showCartButton: true,
         gap: 16,
+        bgColor: "transparent",
+        titleColor: "#111827",
       },
       render: (props: Record<string, unknown>) => (
         <ProductGridBlock {...props} />
@@ -698,11 +744,17 @@ export const puckConfig: Config = {
             { label: "No", value: false },
           ],
         },
+        bgColor: { type: "text" },
+        textColor: { type: "text" },
+        accentColor: { type: "text" },
       },
       defaultProps: {
         productId: "",
         layout: "vertical",
         showDescription: true,
+        bgColor: "#ffffff",
+        textColor: "#111827",
+        accentColor: "#047857",
       },
       render: (props: Record<string, unknown>) => (
         <FeaturedProductBlock {...props} />
@@ -714,6 +766,8 @@ export const puckConfig: Config = {
         fontSize: { type: "number" },
         weight: { type: "number" },
         color: { type: "text" },
+        bgColor: { type: "text" },
+        padding: { type: "number", min: 0, max: 160 },
         align: {
           type: "radio",
           options: [
@@ -728,6 +782,8 @@ export const puckConfig: Config = {
         fontSize: 20,
         weight: 500,
         color: "#1f2937",
+        bgColor: "transparent",
+        padding: 32,
         align: "left",
       },
       render: (props: Record<string, unknown>) => <TextBlock {...props} />,
@@ -746,8 +802,10 @@ export const puckConfig: Config = {
       fields: {
         images: { type: "textarea" },
         columns: { type: "number", min: 1, max: 4 },
+        gap: { type: "number", min: 0, max: 64 },
+        borderRadius: { type: "number", min: 0, max: 48 },
       },
-      defaultProps: { images: "", columns: 3 },
+      defaultProps: { images: "", columns: 3, gap: 12, borderRadius: 16 },
       render: (props: Record<string, unknown>) => (
         <ImageGalleryBlock {...props} />
       ),
@@ -776,8 +834,8 @@ export const puckConfig: Config = {
       defaultProps: {
         text: "Copyright 2026",
         links: "Privacy:/privacy|Contact:/contact",
-        bgColor: "#111827",
-        textColor: "#ffffff",
+        bgColor: "#f8fafc",
+        textColor: "#111827",
       },
       render: (props: Record<string, unknown>) => <FooterBlock {...props} />,
     },
@@ -791,12 +849,20 @@ export const puckConfig: Config = {
     },
     Testimonials: {
       fields: {
+        heading: { type: "text" },
         reviews: { type: "textarea" },
         columns: { type: "number", min: 1, max: 3 },
+        bgColor: { type: "text" },
+        cardBgColor: { type: "text" },
+        textColor: { type: "text" },
       },
       defaultProps: {
+        heading: "What customers say",
         reviews: "Amazing quality|Fast shipping|Great support",
         columns: 3,
+        bgColor: "transparent",
+        cardBgColor: "#ffffff",
+        textColor: "#374151",
       },
       render: (props: Record<string, unknown>) => (
         <TestimonialsBlock {...props} />
@@ -807,11 +873,19 @@ export const puckConfig: Config = {
         heading: { type: "text" },
         placeholder: { type: "text" },
         buttonText: { type: "text" },
+        bgColor: { type: "text" },
+        textColor: { type: "text" },
+        buttonBgColor: { type: "text" },
+        buttonTextColor: { type: "text" },
       },
       defaultProps: {
         heading: "Join our newsletter",
         placeholder: "Email address",
         buttonText: "Subscribe",
+        bgColor: "#fef3c7",
+        textColor: "#111827",
+        buttonBgColor: "#047857",
+        buttonTextColor: "#ffffff",
       },
       render: (props: Record<string, unknown>) => (
         <NewsletterBlock {...props} />
@@ -828,17 +902,22 @@ export const puckConfig: Config = {
             { label: "Dark", value: "dark" },
           ],
         },
+        bgColor: { type: "text" },
+        textColor: { type: "text" },
       },
       defaultProps: {
         targetDate: "2030-01-01",
         label: "Sale ends in",
         colorScheme: "amber",
+        bgColor: "",
+        textColor: "",
       },
       render: (props: Record<string, unknown>) => <CountdownBlock {...props} />,
     },
     Container: {
       fields: {
         bgColor: { type: "text" },
+        textColor: { type: "text" },
         padding: { type: "number" },
         border: { type: "text" },
         maxWidth: { type: "number" },
@@ -846,6 +925,7 @@ export const puckConfig: Config = {
       },
       defaultProps: {
         bgColor: "transparent",
+        textColor: "#4b5563",
         padding: 24,
         border: "",
         maxWidth: 1200,
