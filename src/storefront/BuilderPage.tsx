@@ -5,6 +5,7 @@ import "@puckeditor/core/puck.css";
 import { storefrontApi } from "./api";
 import { puckConfig } from "./puckConfig";
 import type { PuckData, SitePage } from "./types";
+import { BuilderCopilot } from "./components/BuilderCopilot";
 
 const emptyData = { content: [], root: { props: {} } };
 
@@ -79,6 +80,17 @@ const normalizePuckData = (input: PuckData | undefined): { data: PuckData; chang
   };
 };
 
+const applyPuckDataToPage = (page: SitePage, puckData: PuckData) => ({
+  ...page,
+  puckData,
+});
+
+const normalizePageList = (pageList: SitePage[]) =>
+  pageList.map((page) => ({
+    ...page,
+    puckData: normalizePuckData(page.puckData).data,
+  }));
+
 export const BuilderPage = () => {
   const { siteName = "", pageId } = useParams();
   const navigate = useNavigate();
@@ -86,6 +98,8 @@ export const BuilderPage = () => {
   const [activePage, setActivePage] = useState<SitePage | null>(null);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [aiPageLists, setAiPageLists] = useState<SitePage[] | null>(null);
+  const [aiPreviewVersion, setAiPreviewVersion] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -102,25 +116,18 @@ export const BuilderPage = () => {
         return;
       }
 
-      setPages(pageList);
+      const normalizedPages = pageList.map((page) => {
+        const normalized = normalizePuckData(page.puckData);
 
-      const selected = pageId
-        ? pageList.find((page) => page.id === pageId)
-        : pageList.find((page) => page.isHomepage) || pageList[0];
+        if (normalized.changed) {
+          void storefrontApi.updatePage(siteName, page.id, { puckData: normalized.data });
+        }
 
-      if (!selected) {
-        setActivePage(null);
-        setLoading(false);
-        return;
-      }
+        return { ...page, puckData: normalized.data };
+      });
 
-      const normalized = normalizePuckData(selected.puckData);
-      const safePage = { ...selected, puckData: normalized.data };
-      setActivePage(safePage);
-
-      if (normalized.changed) {
-        void storefrontApi.updatePage(siteName, selected.id, { puckData: normalized.data });
-      }
+      setPages(normalizedPages);
+      setActivePage((current) => current || normalizedPages.find((page) => page.isHomepage) || normalizedPages[0] || null);
 
       setLoading(false);
     };
@@ -130,9 +137,31 @@ export const BuilderPage = () => {
     return () => {
       mounted = false;
     };
-  }, [pageId, siteName]);
+  }, [siteName]);
 
-  const data = useMemo(() => activePage?.puckData || emptyData, [activePage]);
+  useEffect(() => {
+    if (!pages.length || aiPageLists) {
+      return;
+    }
+
+    const selected = pageId
+      ? pages.find((page) => page.id === pageId)
+      : pages.find((page) => page.isHomepage) || pages[0];
+
+    setActivePage(selected || pages.find((page) => page.isHomepage) || pages[0] || null);
+  }, [aiPageLists, pageId, pages]);
+
+  const activeVisiblePage = useMemo(() => {
+    if (aiPageLists && activePage) {
+      return aiPageLists.find((p) => p.id === activePage.id || p.pageSlug === activePage.pageSlug) || activePage;
+    }
+    return activePage;
+  }, [activePage, aiPageLists]);
+
+  const data = useMemo(() => activeVisiblePage?.puckData || emptyData, [activeVisiblePage]);
+
+  const visiblePages = aiPageLists || pages;
+  const isAiPreview = Boolean(aiPageLists);
 
   if (!siteName) {
     return <div className="p-6">Missing site name</div>;
@@ -167,16 +196,18 @@ export const BuilderPage = () => {
             Back
           </Link>
           <select
-            value={activePage.id}
+            value={activeVisiblePage?.id || activePage.id}
             className="h-9 rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900"
             onChange={(event) => {
-              const target = pages.find((page) => page.id === event.target.value);
+              const target = visiblePages.find((page) => page.id === event.target.value);
               if (!target) return;
-              setActivePage(target);
-              navigate(`/builder/${siteName}/${target.id}`);
+              setActivePage(pages.find((page) => page.id === target.id) || target);
+              if (!isAiPreview) {
+                navigate(`/builder/${siteName}/${target.id}`);
+              }
             }}
           >
-            {pages.map((page) => (
+            {visiblePages.map((page) => (
               <option key={page.id} value={page.id}>
                 {page.pageName}
               </option>
@@ -185,6 +216,15 @@ export const BuilderPage = () => {
           <button className="rounded-lg border border-stone-300 bg-white px-3 py-1 text-sm text-stone-900" type="button" onClick={addPage}>
             New page
           </button>
+          {aiPageLists && (
+            <button
+              className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1 text-sm text-amber-900"
+              type="button"
+              onClick={() => setAiPageLists(null)}
+            >
+              Exit Preview
+            </button>
+          )}
           <button
             className="rounded-lg bg-stone-900 px-3 py-1 text-sm text-white disabled:opacity-60"
             type="button"
@@ -192,7 +232,41 @@ export const BuilderPage = () => {
             onClick={async () => {
               setSaving(true);
               try {
-                await storefrontApi.updatePage(siteName, activePage.id, { puckData: data as unknown as PuckData });
+                if (aiPageLists) {
+                  const existingIds = new Set(pages.map((page) => page.id));
+                  const savedPages = await Promise.all(
+                    aiPageLists.map(async (page) => {
+                      const payload = {
+                        pageName: page.pageName,
+                        pageSlug: page.pageSlug,
+                        isHomepage: page.isHomepage,
+                        puckData: page.puckData,
+                      };
+
+                      if (existingIds.has(page.id)) {
+                        return storefrontApi.updatePage(siteName, page.id, payload);
+                      }
+
+                      const created = await storefrontApi.createPage(siteName, page.pageName, page.pageSlug);
+                      return storefrontApi.updatePage(siteName, created.id, payload);
+                    }),
+                  );
+
+                  setPages(savedPages);
+                  setActivePage(
+                    savedPages.find(
+                      (page) => page.id === activeVisiblePage?.id || page.pageSlug === activeVisiblePage?.pageSlug,
+                    ) ||
+                      savedPages.find((page) => page.isHomepage) ||
+                      savedPages[0] ||
+                      null,
+                  );
+                  setAiPageLists(null);
+                } else {
+                  const savedPage = await storefrontApi.updatePage(siteName, activePage.id, { puckData: data as unknown as PuckData });
+                  setPages((current) => current.map((page) => (page.id === savedPage.id ? savedPage : page)));
+                  setActivePage(savedPage);
+                }
               } finally {
                 setSaving(false);
               }
@@ -201,7 +275,7 @@ export const BuilderPage = () => {
             {saving ? "Saving..." : "Save"}
           </button>
           <Link
-            to={`/${siteName}${activePage.isHomepage ? "" : `/${activePage.pageSlug}`}`}
+            to={`/${siteName}${activeVisiblePage?.isHomepage ? "" : `/${activeVisiblePage?.pageSlug || ""}`}`}
             target="_blank"
             className="rounded-lg border border-stone-300 bg-white px-3 py-1 text-sm text-stone-900"
           >
@@ -211,16 +285,64 @@ export const BuilderPage = () => {
       </div>
 
       <Puck
+        key={`${activeVisiblePage?.id || activePage.id}-${isAiPreview ? aiPreviewVersion : 0}`}
         config={puckConfig}
         data={data}
         onPublish={async (published) => {
-          await storefrontApi.updatePage(siteName, activePage.id, { puckData: published as unknown as PuckData });
+          const normalized = normalizePuckData(published as unknown as PuckData).data;
+
+          if (aiPageLists) {
+            setAiPageLists((current) =>
+              current?.map((page) =>
+                page.id === activeVisiblePage?.id || page.pageSlug === activeVisiblePage?.pageSlug
+                  ? applyPuckDataToPage(page, normalized)
+                  : page,
+              ) || current,
+            );
+            return;
+          }
+
+          await storefrontApi.updatePage(siteName, activePage.id, { puckData: normalized });
         }}
         onChange={(nextData) => {
           const normalized = normalizePuckData(nextData as unknown as PuckData).data;
+          if (aiPageLists) {
+            setAiPageLists((current) =>
+              current?.map((page) =>
+                page.id === activeVisiblePage?.id || page.pageSlug === activeVisiblePage?.pageSlug
+                  ? applyPuckDataToPage(page, normalized)
+                  : page,
+              ) || current,
+            );
+            return;
+          }
+
           setActivePage((current) =>
             current ? { ...current, puckData: normalized } : current,
           );
+        }}
+      />
+
+      <BuilderCopilot
+        siteName={siteName}
+        pages={visiblePages}
+        activePageId={activeVisiblePage?.id || activePage.id}
+        onUpdateAiPages={(nextPages) => {
+          if (!nextPages) {
+            setAiPageLists(null);
+            return;
+          }
+
+          const normalizedPages = normalizePageList(nextPages);
+          const nextActive =
+            normalizedPages.find((page) => page.id === activeVisiblePage?.id || page.pageSlug === activeVisiblePage?.pageSlug) ||
+            normalizedPages.find((page) => page.isHomepage) ||
+            normalizedPages[0] ||
+            null;
+
+          setAiPageLists(normalizedPages);
+          setAiPreviewVersion((version) => version + 1);
+          setActivePage(nextActive);
         }}
       />
     </div>
