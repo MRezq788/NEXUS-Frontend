@@ -134,4 +134,10 @@ export const storefrontApi = {
 
   listOrders: (siteName: string, email: string) =>
     request<SiteOrder[]>(`${API_BASE}/sites/${encodeURIComponent(siteName)}/orders/customer/${encodeURIComponent(email)}`),
+
+  generateWithAi: (siteName: string, prompt: string, currentPages: SitePage[], activePageId?: string) =>
+    request<SitePage[]>(`${API_BASE}/sites/${encodeURIComponent(siteName)}/ai-builder`, {
+      method: "POST",
+      body: JSON.stringify({ prompt, currentPages, activePageId }),
+    }),
 };
