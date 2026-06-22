@@ -303,7 +303,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         <ul className="space-y-1">
           {tabs.map((tab, index) => (
             <li
-              key={tab.route}
+              key={`${tab.route}-${tab.title}`}
               className={`transform transition-all duration-500 ${
                 isVisible
                   ? "opacity-100 translate-x-0"
