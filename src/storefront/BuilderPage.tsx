@@ -97,6 +97,7 @@ export const BuilderPage = () => {
   const [pages, setPages] = useState<SitePage[]>([]);
   const [activePage, setActivePage] = useState<SitePage | null>(null);
   const [saving, setSaving] = useState(false);
+  const [deletingPage, setDeletingPage] = useState(false);
   const [loading, setLoading] = useState(true);
   const [aiPageLists, setAiPageLists] = useState<SitePage[] | null>(null);
   const [aiPreviewVersion, setAiPreviewVersion] = useState(0);
@@ -188,6 +189,46 @@ export const BuilderPage = () => {
     navigate(`/builder/${siteName}/${created.id}`);
   };
 
+  const deleteCurrentPage = async () => {
+    if (!activeVisiblePage || activeVisiblePage.isHomepage) {
+      return;
+    }
+
+    const confirmed = window.confirm(`Delete page "${activeVisiblePage.pageName}"?`);
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingPage(true);
+
+    try {
+      if (aiPageLists) {
+        const nextPages = aiPageLists.filter((page) => page.id !== activeVisiblePage.id);
+        const nextActive = nextPages.find((page) => page.isHomepage) || nextPages[0] || null;
+
+        setAiPageLists(nextPages.length ? nextPages : null);
+        setActivePage(nextActive);
+        setAiPreviewVersion((version) => version + 1);
+        return;
+      }
+
+      await storefrontApi.deletePage(siteName, activeVisiblePage.id);
+      const nextPages = pages.filter((page) => page.id !== activeVisiblePage.id);
+      const nextActive = nextPages.find((page) => page.isHomepage) || nextPages[0] || null;
+
+      setPages(nextPages);
+      setActivePage(nextActive);
+
+      if (nextActive) {
+        navigate(`/builder/${siteName}/${nextActive.id}`);
+      } else {
+        navigate(`/builder/${siteName}`);
+      }
+    } finally {
+      setDeletingPage(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900">
       <div className="sticky top-0 z-50 border-b border-stone-200 bg-white/95 px-4 py-3 backdrop-blur">
@@ -215,6 +256,15 @@ export const BuilderPage = () => {
           </select>
           <button className="rounded-lg border border-stone-300 bg-white px-3 py-1 text-sm text-stone-900" type="button" onClick={addPage}>
             New page
+          </button>
+          <button
+            className="rounded-lg border border-red-200 bg-red-50 px-3 py-1 text-sm text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+            type="button"
+            disabled={deletingPage || Boolean(activeVisiblePage?.isHomepage)}
+            onClick={() => void deleteCurrentPage()}
+            title={activeVisiblePage?.isHomepage ? "Homepage cannot be deleted" : "Delete current page"}
+          >
+            {deletingPage ? "Deleting..." : "Delete page"}
           </button>
           {aiPageLists && (
             <button
