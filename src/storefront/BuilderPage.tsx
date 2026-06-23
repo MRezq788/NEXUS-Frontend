@@ -163,12 +163,15 @@ export const BuilderPage = () => {
     <div className="min-h-screen bg-stone-50 text-stone-900">
       <div className="sticky top-0 z-50 border-b border-stone-200 bg-white/95 px-4 py-3 backdrop-blur">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2">
-          <Link to="/dashboard" className="rounded-lg border border-stone-300 bg-white px-3 py-1 text-sm text-stone-900">
+          <Link
+            to="/dashboard"
+            className="rounded-lg border border-stone-300 bg-white px-3 py-1 text-sm text-stone-900 transition hover:border-amber-400 hover:bg-amber-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+          >
             Back
           </Link>
           <select
             value={activePage.id}
-            className="h-9 rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900"
+            className="h-9 rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900 transition hover:border-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
             onChange={(event) => {
               const target = pages.find((page) => page.id === event.target.value);
               if (!target) return;
@@ -182,11 +185,15 @@ export const BuilderPage = () => {
               </option>
             ))}
           </select>
-          <button className="rounded-lg border border-stone-300 bg-white px-3 py-1 text-sm text-stone-900" type="button" onClick={addPage}>
+          <button
+            className="rounded-lg border border-stone-300 bg-white px-3 py-1 text-sm text-stone-900 transition hover:border-amber-400 hover:bg-amber-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+            type="button"
+            onClick={addPage}
+          >
             New page
           </button>
           <button
-            className="rounded-lg bg-stone-900 px-3 py-1 text-sm text-white disabled:opacity-60"
+            className="rounded-lg bg-stone-900 px-3 py-1 text-sm text-white transition hover:bg-stone-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
             type="button"
             disabled={saving}
             onClick={async () => {
@@ -203,7 +210,7 @@ export const BuilderPage = () => {
           <Link
             to={`/${siteName}${activePage.isHomepage ? "" : `/${activePage.pageSlug}`}`}
             target="_blank"
-            className="rounded-lg border border-stone-300 bg-white px-3 py-1 text-sm text-stone-900"
+            className="rounded-lg border border-stone-300 bg-white px-3 py-1 text-sm text-stone-900 transition hover:border-amber-400 hover:bg-amber-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
           >
             Preview
           </Link>
