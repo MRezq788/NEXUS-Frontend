@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 import { uploadProductImage } from "../config/supabase";
+import { BASE_URL } from "../api/base";
 import { getAuth } from "firebase/auth";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -517,9 +518,8 @@ export function AddProduct() {
         if (!user) return;
         const token = await user.getIdToken();
 
-        // Adjust this URL to match your backend (e.g. /api/products/:id)
         const response = await fetch(
-          `http://localhost:3000/api/products/${id}`,
+          `${BASE_URL}/add-product/${id}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -856,8 +856,8 @@ export function AddProduct() {
       const token = await user.getIdToken();
 
       const url = isEdit
-        ? `http://localhost:3000/api/products/${id}`
-        : "http://localhost:3000/api/add-product";
+        ? `${BASE_URL}/add-product/${id}`
+        : `${BASE_URL}/add-product`;
 
       const method = isEdit ? "PUT" : "POST";
 
