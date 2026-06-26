@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { BASE_URL } from '../api/base';
 import { getAuth } from 'firebase/auth';
 import { useTheme } from '../contexts/ThemeContext';
 import { POSHeader } from '../components/Cashier/POSHeader';
@@ -82,7 +83,7 @@ export function CashierInventory() {
       }
 
       const token = await user.getIdToken();
-      const res = await fetch('http://localhost:3000/api/shop-products?page=1&limit=100', {
+      const res = await fetch(`${BASE_URL}/shop-products?page=1&limit=100`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'X-User-Email': user.email || '',

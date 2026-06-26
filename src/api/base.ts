@@ -1,5 +1,5 @@
 const envBaseUrl = import.meta.env.VITE_API_BASE_URL as string | undefined;
-export const BASE_URL = envBaseUrl ?? "http://localhost:3000/api";
+export const BASE_URL = envBaseUrl ?? "https://nexus-backend-n1c5.onrender.com/api";
 
 interface FetchOptions {
   params?: Record<string, string | number | undefined>;

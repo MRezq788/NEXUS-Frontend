@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useTheme } from "../contexts/ThemeContext";
 import { getAuth } from "firebase/auth";
+import { BASE_URL } from "../api/base";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -40,7 +41,7 @@ interface ApiResponse {
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
-const API_URL = "http://localhost:3000" as string;
+
 const PAGE_SIZE = 8;
 
 // ─── Icon helpers ────────────────────────────────────────────────────────────
@@ -174,7 +175,7 @@ export function WarehouseProducts({
         if (debouncedSearch) params.set("search", debouncedSearch);
 
         const res = await fetch(
-          `${API_URL}/api/warehouse-products?${params.toString()}`,
+          `${BASE_URL}/warehouse-products?${params.toString()}`,
           {
             headers: {
               Authorization: token ? `Bearer ${token}` : "",

@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useTheme } from "../contexts/ThemeContext";
 import { getAuth } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
+import { BASE_URL } from "../api/base";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -48,7 +49,7 @@ interface ApiCountResponse {
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
-const API_URL = "http://localhost:3000/api/shop-products";
+const API_URL = `${BASE_URL}/shop-products`;
 const PAGE_SIZE = 10;
 
 // ─── Icon helpers ────────────────────────────────────────────────────────────
@@ -443,7 +444,7 @@ export function Inventory() {
       const token = await user.getIdToken();
 
       const res = await fetch(
-        `http://localhost:3000/api/products/${productId}`,
+        `${BASE_URL}/products/${productId}`,
         {
           method: "DELETE",
           headers: {

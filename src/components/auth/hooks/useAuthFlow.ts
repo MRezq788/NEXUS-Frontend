@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react"
+import { BASE_URL } from "../../../api/base"
 import type { FormEvent } from "react"
 import { 
   signInWithEmailAndPassword, 
@@ -53,7 +54,7 @@ export function useAuthFlow() {
     const token = await user.getIdToken()
     
     // Adjust URL based on your env
-    const response = await fetch('http://localhost:3000/api/users/sync', { 
+    const response = await fetch(`${BASE_URL}/users/sync`, { 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

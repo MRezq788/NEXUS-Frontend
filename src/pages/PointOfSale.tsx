@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { getAuth } from 'firebase/auth';
 import { usePOS } from '../contexts/POSContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { BASE_URL } from '../api/base';
 import { POSHeader } from '../components/Cashier/POSHeader';
 import { CategoryTabs } from '../components/Cashier/CategoryTabs';
 import { ProductGrid } from '../components/Cashier/ProductGrid';
@@ -97,7 +98,7 @@ export function PointOfSale() {
       }
 
       const token = await user.getIdToken();
-      const res = await fetch('http://localhost:3000/api/shop-products?page=1&limit=100', {
+      const res = await fetch(`${BASE_URL}/shop-products?page=1&limit=100`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'X-User-Email': user.email || '',
