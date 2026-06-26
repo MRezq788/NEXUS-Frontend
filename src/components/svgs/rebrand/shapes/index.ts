@@ -1,0 +1,9 @@
+export { default as CircleShapeSVG } from './Circle';
+export { default as RhombusShapeSVG } from './Rhombus';
+export { default as SquareShapeSVG } from './Square';
+export { default as StarShapeSVG } from './Star';
+export { default as TriangleShapeSVG } from './Triangle';
+export { default as RoseChartIcon } from './RoseChart';
+export { default as PieChartIcon } from './PieChart';
+export { default as GreenCheckIcon } from './GreenCheck';
+export { default as RedMinusIcon } from './RedMinus';

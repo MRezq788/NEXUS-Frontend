@@ -1,0 +1,11 @@
+import React from 'react'
+
+function XIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 39 38" fill="none" className='fill-current w-full h-full'>
+      <path d="M23.2865 16.0921L37.4343 0H34.0822L21.792 13.9696L11.9831 0H0.666992L15.5034 21.1264L0.666992 38H4.01914L16.9899 23.2441L27.3509 38H38.667L23.2865 16.0921ZM18.6937 21.3119L17.1882 19.2069L5.22801 2.47278H10.3776L20.0327 15.9827L21.5319 18.0878L34.0806 35.6477H28.931L18.6937 21.3119Z" />
+    </svg>
+  )
+}
+
+export default XIcon
