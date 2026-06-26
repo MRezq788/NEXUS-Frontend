@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import TranslationIcon from "../svgs/aiAssist/TranslationIcon";
 import AIToolsIcon from "../svgs/aiAssist/AIToolsIcon";
 import { AIAutoTranslateCall } from "../../services/aiUtils";

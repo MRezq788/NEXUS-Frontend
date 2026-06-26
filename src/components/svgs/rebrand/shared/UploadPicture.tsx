@@ -1,9 +1,8 @@
-import * as React from "react";
-import { useTheme } from "../../../../context/useDarkSide";
+import { useTheme } from "../../../../contexts/ThemeContext";
 
 const UploadPic = () => {
-  const { themeColor } = useTheme();
-  const color = themeColor === 'light' ? '#000' : '#fff';
+  const { theme } = useTheme();
+  const color = theme === 'light' ? '#000' : '#fff';
 
   return (
     <svg

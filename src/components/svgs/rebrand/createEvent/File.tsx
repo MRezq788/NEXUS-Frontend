@@ -1,7 +1,8 @@
-import React from 'react';
 
-function File({ fileType }) {
-  const truncateText = (text, maxChars = 5) => {
+
+
+function File({ fileType }: { fileType?: string }) {
+  const truncateText = (text: string, maxChars = 5) => {
     if (!text) return '';
     return text.length > maxChars ? `${text.substring(0, maxChars)}...` : text;
   };

@@ -1,8 +1,8 @@
-import React from 'react';
+import type { RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type Props = {
-  composeInputRef: React.RefObject<HTMLInputElement>;
+  composeInputRef: RefObject<HTMLInputElement>;
   handleCompose: () => void;
 };
 

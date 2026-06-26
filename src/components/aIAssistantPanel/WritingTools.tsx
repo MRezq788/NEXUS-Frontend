@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import Close from "../svgs/rebrand/shared/Close";
 import Proofread from "../svgs/aiAssist/Proofread";
@@ -9,6 +9,7 @@ import Concise from "../svgs/aiAssist/Concise";
 import Compose from "../svgs/aiAssist/Compose";
 import AIRewriteOption from "./AIRewriteOption";
 import { AIAssistCall } from "../../services/aiUtils";
+import type { AIToolType } from "../../models/aiMessage";
 import toast from "react-hot-toast";
 // import { useSnapshot } from 'valtio';
 // import { aiChatState } from '../../store/aiChat';
@@ -104,7 +105,7 @@ export default function WritingTools({
     },
   ];
 
-  const handleOperationClick = async (index: number, type: string) => {
+  const handleOperationClick = async (index: number, type: AIToolType) => {
     setLoadingOp(index);
     const original =
       activeInputIdx == 0 ? getInputsValue().en : getInputsValue().ar;
@@ -253,7 +254,7 @@ export default function WritingTools({
                   className="flex flex-col items-center justify-center py-3 px-2 bg-white dark:bg-[rgba(255,255,255,0.14)] rounded-xl cursor-pointer"
                   onClick={() => {
                     if (loadingOp !== null) return;
-                    handleOperationClick(index, tool.type);
+                    handleOperationClick(index, tool.type as AIToolType);
                   }}
                 >
                   {tool.icon}
@@ -268,7 +269,7 @@ export default function WritingTools({
                   className="flex flex-col items-center justify-center py-3 px-2 bg-white dark:bg-[rgba(255,255,255,0.14)] rounded-xl cursor-pointer"
                   onClick={() => {
                     if (loadingOp !== null) return;
-                    handleOperationClick(index + 2, tool.type);
+                    handleOperationClick(index + 2, tool.type as AIToolType);
                   }}
                 >
                   {tool.icon}

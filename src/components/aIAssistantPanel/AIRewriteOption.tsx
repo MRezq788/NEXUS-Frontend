@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 import { SmallSpinnerLoader } from "../shared/rebrand/loaders";
 
 type Props = {
-  type: "rewrite" | "friendly" | "professional" | "concise" | "compose";
+  type: "proofread" | "rewrite" | "friendly" | "professional" | "concise" | "compose";
   title: string;
   changeHeight: (newHeight: number) => void;
   changeWidth: (newWidth: number) => void;

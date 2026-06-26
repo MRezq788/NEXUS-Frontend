@@ -1,4 +1,3 @@
-import React from 'react';
 import editIconSvg from '../../../../assets/images/icons/edit.svg';
 
 function EditIcon() {

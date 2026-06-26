@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import Undo from '../svgs/Undo';
 import Redo from '../svgs/Redo';
 
