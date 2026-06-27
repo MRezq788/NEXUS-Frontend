@@ -1,0 +1,13 @@
+export { default as KidsIcon } from './Kids';
+export { default as AgeRestrictionsIcon } from './AgeRestrictions';
+export { default as NotAllowedIcon } from './NotAllowed';
+export { default as LargeBagIcon } from './LargeBag';
+export { default as MetalDetectorIcon } from './MetalDetector';
+export { default as CheckedGuardIcon } from './CheckedGuard';
+export { default as FoodIcon } from './Food';
+export { default as PetIcon } from './Pet';
+export { default as LitteringIcon } from './Littering';
+export { default as NoFlashIcon } from './NoFlash';
+export { default as NoSpeakerIcon } from './NoSpeaker';
+export { default as EntryIcon } from './Entry';
+export { default as AlcoholIcon } from './Alcohol';

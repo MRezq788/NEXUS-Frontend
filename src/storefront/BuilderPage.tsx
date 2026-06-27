@@ -233,12 +233,15 @@ export const BuilderPage = () => {
     <div className="min-h-screen bg-stone-50 text-stone-900">
       <div className="sticky top-0 z-50 border-b border-stone-200 bg-white/95 px-4 py-3 backdrop-blur">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2">
-          <Link to="/dashboard" className="rounded-lg border border-stone-300 bg-white px-3 py-1 text-sm text-stone-900">
+          <Link
+            to="/dashboard"
+            className="rounded-lg border border-stone-300 bg-white px-3 py-1 text-sm text-stone-900 transition hover:border-amber-400 hover:bg-amber-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+          >
             Back
           </Link>
           <select
             value={activeVisiblePage?.id || activePage.id}
-            className="h-9 rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900"
+            className="h-9 rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900 transition hover:border-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
             onChange={(event) => {
               const target = visiblePages.find((page) => page.id === event.target.value);
               if (!target) return;
@@ -254,7 +257,11 @@ export const BuilderPage = () => {
               </option>
             ))}
           </select>
-          <button className="rounded-lg border border-stone-300 bg-white px-3 py-1 text-sm text-stone-900" type="button" onClick={addPage}>
+          <button
+            className="rounded-lg border border-stone-300 bg-white px-3 py-1 text-sm text-stone-900 transition hover:border-amber-400 hover:bg-amber-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+            type="button"
+            onClick={addPage}
+          >
             New page
           </button>
           <button
@@ -276,7 +283,25 @@ export const BuilderPage = () => {
             </button>
           )}
           <button
-            className="rounded-lg bg-stone-900 px-3 py-1 text-sm text-white disabled:opacity-60"
+            className="rounded-lg border border-red-200 bg-red-50 px-3 py-1 text-sm text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+            type="button"
+            disabled={deletingPage || Boolean(activeVisiblePage?.isHomepage)}
+            onClick={() => void deleteCurrentPage()}
+            title={activeVisiblePage?.isHomepage ? "Homepage cannot be deleted" : "Delete current page"}
+          >
+            {deletingPage ? "Deleting..." : "Delete page"}
+          </button>
+          {aiPageLists && (
+            <button
+              className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1 text-sm text-amber-900"
+              type="button"
+              onClick={() => setAiPageLists(null)}
+            >
+              Exit Preview
+            </button>
+          )}
+          <button
+            className="rounded-lg bg-stone-900 px-3 py-1 text-sm text-white transition hover:bg-stone-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
             type="button"
             disabled={saving}
             onClick={async () => {
@@ -327,7 +352,7 @@ export const BuilderPage = () => {
           <Link
             to={`/${siteName}${activeVisiblePage?.isHomepage ? "" : `/${activeVisiblePage?.pageSlug || ""}`}`}
             target="_blank"
-            className="rounded-lg border border-stone-300 bg-white px-3 py-1 text-sm text-stone-900"
+            className="rounded-lg border border-stone-300 bg-white px-3 py-1 text-sm text-stone-900 transition hover:border-amber-400 hover:bg-amber-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
           >
             Preview
           </Link>

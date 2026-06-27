@@ -1,4 +1,10 @@
-﻿import {
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  updateProfile,
+} from "firebase/auth";
+import {
   createContext,
   useCallback,
   useContext,
@@ -7,6 +13,7 @@
   useState,
   type ReactNode,
 } from "react";
+import { storefrontAuth } from "../../config/firbase";
 import { storefrontApi } from "../api";
 import type { Product, SiteAddress, SiteUser } from "../types";
 
@@ -31,6 +38,7 @@ const StorefrontSessionContext = createContext<StorefrontSessionContextValue | n
 const guestCartKey = (siteName: string) => `nexus_guest_cart_${siteName}`;
 const guestWishlistKey = (siteName: string) => `nexus_guest_wishlist_${siteName}`;
 const sessionKey = (siteName: string) => `nexus_session_${siteName}`;
+const loggedOutKey = (siteName: string) => `nexus_storefront_logged_out_${siteName}`;
 const toCartKey = (item: { productId: string; variantId?: string; quantity: number }) =>
   `${item.productId}::${item.variantId || ""}`;
 
@@ -215,27 +223,71 @@ export const StorefrontSessionProvider = ({
     };
   }, [siteName, syncRemote]);
 
+  useEffect(() => {
+    const clearCachedSessionIfLoggedOut = () => {
+      if (localStorage.getItem(sessionKey(siteName))) {
+        return;
+      }
+
+      const storedGuestCart = JSON.parse(localStorage.getItem(guestCartKey(siteName)) || "[]") as Array<{
+        productId: string;
+        variantId?: string;
+        quantity: number;
+      }>;
+      const storedGuestWishlist = JSON.parse(localStorage.getItem(guestWishlistKey(siteName)) || "[]") as string[];
+
+      setUser(null);
+      setCart(storedGuestCart);
+      setWishlist(storedGuestWishlist);
+    };
+
+    window.addEventListener("pageshow", clearCachedSessionIfLoggedOut);
+    window.addEventListener("focus", clearCachedSessionIfLoggedOut);
+
+    return () => {
+      window.removeEventListener("pageshow", clearCachedSessionIfLoggedOut);
+      window.removeEventListener("focus", clearCachedSessionIfLoggedOut);
+    };
+  }, [siteName]);
+
   const login = useCallback(
     async (email: string, password: string) => {
-      const loggedInUser = await storefrontApi.login(siteName, email, password);
+      const credential = await signInWithEmailAndPassword(storefrontAuth, email.trim(), password);
+      const idToken = await credential.user.getIdToken();
+      const loggedInUser = await storefrontApi.login(siteName, idToken);
       setUser(loggedInUser);
       localStorage.setItem(sessionKey(siteName), JSON.stringify({ email: loggedInUser.email }));
+      sessionStorage.removeItem(loggedOutKey(siteName));
     },
     [siteName],
   );
 
   const signup = useCallback(
     async (email: string, name: string, password: string) => {
-      const created = await storefrontApi.signup(siteName, email, name, password);
+      const credential = await createUserWithEmailAndPassword(storefrontAuth, email.trim(), password);
+
+      if (name.trim()) {
+        await updateProfile(credential.user, { displayName: name.trim() });
+      }
+
+      const idToken = await credential.user.getIdToken(true);
+      const created = await storefrontApi.signup(siteName, idToken, name.trim());
       setUser(created);
       localStorage.setItem(sessionKey(siteName), JSON.stringify({ email: created.email }));
+      sessionStorage.removeItem(loggedOutKey(siteName));
     },
     [siteName],
   );
 
   const logout = useCallback(() => {
     localStorage.removeItem(sessionKey(siteName));
+    sessionStorage.setItem(loggedOutKey(siteName), "1");
     setUser(null);
+    setCart([]);
+    setWishlist([]);
+    void signOut(storefrontAuth).catch((error) => {
+      console.warn("Firebase sign out failed after clearing storefront session:", error);
+    });
   }, [siteName]);
 
   const addToCart = useCallback(

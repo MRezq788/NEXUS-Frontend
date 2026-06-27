@@ -2,13 +2,14 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 import { getAuth } from "firebase/auth";
+import { BASE_URL } from "../api/base";
 import { WarehouseProducts } from "./WarehouseProducts";
 import { ProductDetail } from "./ProductDetail";
 import type { Product } from "./WarehouseProducts";
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
-const API_URL = "http://localhost:3000" as string;
+
 
 // ─── Cart types ──────────────────────────────────────────────────────────────
 
@@ -189,7 +190,7 @@ export function WarehouseShop() {
         })),
       };
 
-      const res = await fetch(`${API_URL}/api/warehouse-shop/orders`, {
+      const res = await fetch(`${BASE_URL}/warehouse-shop/orders`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

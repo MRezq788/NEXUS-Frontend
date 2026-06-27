@@ -1,0 +1,13 @@
+export { default as CalenderIcon } from './Calender';
+export { default as ExchangeIcon } from './Exchange';
+export { default as HomeIcon } from './Home';
+export { default as IDIcon } from './ID';
+export { default as LogoutIcon } from './Logout';
+export { default as MarketingIcon } from './Merketing';
+export { default as OrderIcon } from './Order';
+export { default as PuzzleIcon } from './Puzzle';
+export { default as ReportsIcon } from './Reports';
+export { default as SearchIcon } from './Search';
+export { default as SettingsIcon } from './Settings';
+export { default as SupportIcon } from './Support';
+export { default as NotificationsIcon } from './Notifications';

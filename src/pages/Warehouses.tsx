@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useTheme } from "../contexts/ThemeContext";
 import { useNavigate } from "react-router-dom";
+import { BASE_URL } from "../api/base";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -25,7 +26,7 @@ interface ApiResponse {
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
-const API_URL = "http://localhost:3000" as string;
+
 const PAGE_SIZE = 8;
 
 const HARDCODED_CATEGORIES = [
@@ -178,7 +179,7 @@ export function Warehouses() {
         if (categoryFilter !== "all") params.set("category", categoryFilter);
 
         const res = await fetch(
-          `${API_URL}/api/warehouses?${params.toString()}`,
+          `${BASE_URL}/warehouses?${params.toString()}`,
         );
 
         if (!res.ok) {

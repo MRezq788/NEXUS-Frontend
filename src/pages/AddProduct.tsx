@@ -2,7 +2,10 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 import { uploadProductImage } from "../config/supabase";
+import { BASE_URL } from "../api/base";
 import { getAuth } from "firebase/auth";
+import { WrappedInput as NormalInput } from "../components/shared/rebrand/formInputs/NormalInput";
+import { WrappedTextArea as TextArea } from "../components/shared/rebrand/formInputs/TextArea";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -505,6 +508,22 @@ export function AddProduct() {
   // Variants
   const [variants, setVariants] = useState<Variant[]>([]);
 
+  // ── controlRegister adapter ────────────────────────────────────────────────
+  // NormalInput/TextArea expect a React-Hook-Form-style `controlRegister`
+  // function that returns props to spread. This adapter bridges them to the
+  // page's `useState` without forcing a full form-library migration.
+  const makeRegister = (
+    value: string,
+    setValue: (next: string) => void,
+  ) =>
+    (controlName: string) => ({
+      name: controlName,
+      value,
+      onChange: (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+      ) => setValue(e.target.value),
+    });
+
   // ── Fetch Product (Edit Mode) ─────────────────────────────────────────────
 
   useEffect(() => {
@@ -517,9 +536,8 @@ export function AddProduct() {
         if (!user) return;
         const token = await user.getIdToken();
 
-        // Adjust this URL to match your backend (e.g. /api/products/:id)
         const response = await fetch(
-          `http://localhost:3000/api/products/${id}`,
+          `${BASE_URL}/add-product/${id}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -856,8 +874,8 @@ export function AddProduct() {
       const token = await user.getIdToken();
 
       const url = isEdit
-        ? `http://localhost:3000/api/products/${id}`
-        : "http://localhost:3000/api/add-product";
+        ? `${BASE_URL}/add-product/${id}`
+        : `${BASE_URL}/add-product`;
 
       const method = isEdit ? "PUT" : "POST";
 
@@ -991,35 +1009,25 @@ export function AddProduct() {
             </h3>
 
             <div className="space-y-6">
-              <div>
-                <label
-                  className={`block text-sm font-semibold mb-2 ${isDark ? "text-gray-400" : "text-gray-700"}`}
-                >
-                  Product Name
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Premium Cotton T-Shirt"
-                  className={`w-full px-4 py-3 rounded-xl outline-none transition-all ${isDark ? "bg-black/40 border border-[#2d2e33] text-white focus:border-blue-500" : "bg-gray-50 border border-gray-200 text-gray-900 focus:border-blue-500"}`}
-                />
-              </div>
+              <NormalInput
+                name="name"
+                label="Product Name"
+                required
+                placeholder="e.g. Premium Cotton T-Shirt"
+                controlRegister={makeRegister(name, setName)}
+                controlName="name"
+              />
 
-              <div>
-                <label
-                  className={`block text-sm font-semibold mb-2 ${isDark ? "text-gray-400" : "text-gray-700"}`}
-                >
-                  Description
-                </label>
-                <textarea
-                  rows={4}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Tell your customers about this product..."
-                  className={`w-full px-4 py-3 rounded-xl outline-none transition-all resize-none ${isDark ? "bg-black/40 border border-[#2d2e33] text-white focus:border-blue-500" : "bg-gray-50 border border-gray-200 text-gray-900 focus:border-blue-500"}`}
-                />
-              </div>
+              <TextArea
+                name="description"
+                label="Description"
+                required
+                placeholder="Tell your customers about this product..."
+                controlRegister={makeRegister(description, setDescription)}
+                controlName="description"
+                rows={4}
+                maxLength={1000}
+              />
 
               <div className="grid grid-cols-2 gap-6">
                 <div>

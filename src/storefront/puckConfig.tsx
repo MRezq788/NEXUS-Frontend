@@ -520,11 +520,11 @@ const NewsletterBlock = ({
       <div className="mt-4 flex gap-2">
         <input
           placeholder={String(placeholder || "Email address")}
-          className="h-11 flex-1 rounded-lg border border-stone-300 px-3"
+          className="h-11 flex-1 rounded-lg border border-stone-300 px-3 transition hover:border-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
         />
         <button
           type="button"
-          className="rounded-lg px-4 text-sm font-semibold"
+          className="rounded-lg bg-stone-900 px-4 text-sm font-semibold text-white transition hover:bg-stone-700 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
           style={{
             backgroundColor: String(buttonBgColor || "#047857"),
             color: String(buttonTextColor || "#ffffff"),

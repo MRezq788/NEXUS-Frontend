@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 import { getAuth } from "firebase/auth";
 import { ProductDetail } from "./ProductDetail";
+import { BASE_URL } from "../api/base";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -41,7 +42,7 @@ interface ApiResponse {
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
-const API_URL = "http://localhost:3000" as string;
+
 const PAGE_SIZE = 8;
 
 // ─── Icon helpers ────────────────────────────────────────────────────────────
@@ -156,7 +157,7 @@ export function Recommendations() {
       const user = auth.currentUser;
       const token = await user?.getIdToken();
 
-      const res = await fetch(`${API_URL}/api/shop-products/recommendations`, {
+      const res = await fetch(`${BASE_URL}/shop-products/recommendations`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "X-User-Email": user?.email || "",
@@ -309,7 +310,7 @@ export function Recommendations() {
       // Send to bulk endpoint if multiple warehouses, single if one
       let res;
       if (orders.length === 1) {
-        res = await fetch(`${API_URL}/api/warehouse-shop/orders`, {
+        res = await fetch(`${BASE_URL}/warehouse-shop/orders`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -319,7 +320,7 @@ export function Recommendations() {
           body: JSON.stringify(orders[0]),
         });
       } else {
-        res = await fetch(`${API_URL}/api/warehouse-shop/orders/bulk`, {
+        res = await fetch(`${BASE_URL}/warehouse-shop/orders/bulk`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

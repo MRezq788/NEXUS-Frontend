@@ -1,0 +1,9 @@
+export { default as HomeIcon } from './HomeIcon';
+export { default as EventsIcon } from './EventsIcon';
+export { default as OrdersIcon } from './OrdersIcon';
+export { default as ReportsIcon } from './ReportsIcon';
+export { default as MarketingIcon } from './MarketingIcon';
+export { default as FinanceIcon } from './FinanceIcon';
+export { default as TeamIcon } from './TeamIcon';
+export { default as ProfileIcon } from './ProfileIcon';
+export { default as NFTsIcons } from './NFTsIcons';

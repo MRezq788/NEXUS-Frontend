@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { POSProvider } from "./contexts/POSContext";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
@@ -31,6 +32,7 @@ function App() {
   return (
     <POSProvider>
       <ThemeProvider>
+        <Toaster position="top-right" />
         <Router>
           <Routes>
             <Route path="/login" element={<LoginPage />} />

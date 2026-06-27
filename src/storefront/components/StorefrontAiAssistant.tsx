@@ -277,7 +277,7 @@ export function StorefrontAiAssistant({ siteName, storeName, settings }: Props) 
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="h-9 w-9 rounded-full bg-white/10 text-lg leading-none transition hover:bg-white/20"
+              className="h-9 w-9 rounded-full bg-white/10 text-lg leading-none transition hover:bg-white/20 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950"
               aria-label="Close assistant"
             >
               x
@@ -343,9 +343,9 @@ export function StorefrontAiAssistant({ siteName, storeName, settings }: Props) 
             <button
               type="submit"
               disabled={loading || !input.trim()}
-              className="rounded-xl bg-stone-950 px-5 py-2 text-sm font-semibold text-white transition hover:bg-stone-800 disabled:opacity-50"
+              className="rounded-xl bg-stone-950 px-5 py-2 text-sm font-semibold text-white transition hover:bg-stone-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
             >
-              Send
+              {loading ? "Sending..." : "Send"}
             </button>
           </form>
         </div>
@@ -354,7 +354,7 @@ export function StorefrontAiAssistant({ siteName, storeName, settings }: Props) 
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
-        className="ml-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-600 text-lg font-black text-white shadow-xl shadow-emerald-900/20 transition hover:-translate-y-1 hover:bg-emerald-700"
+        className="ml-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-600 text-lg font-black text-white shadow-xl shadow-emerald-900/20 transition hover:-translate-y-1 hover:bg-emerald-700 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
         aria-label="Open AI assistant"
       >
         AI

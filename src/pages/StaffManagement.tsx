@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { getAuth } from "firebase/auth";
 import { useTheme } from "../contexts/ThemeContext";
 import { usersApi } from "../api";
+import { BASE_URL } from "../api/base";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
 interface FormState {
@@ -135,7 +136,7 @@ export function StaffManagement() {
       }
 
       const token = await user.getIdToken();
-      const res = await fetch("http://localhost:3000/api/shop-products?page=1&limit=100", {
+      const res = await fetch(`${BASE_URL}/shop-products?page=1&limit=100`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "X-User-Email": cashierEmail,

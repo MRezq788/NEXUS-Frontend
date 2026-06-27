@@ -17,9 +17,76 @@ import { puckConfig } from "./puckConfig";
 import type { Product, SiteAddress, SiteOrder, SitePage, SiteSettings } from "./types";
 
 const defaultPageData = { content: [], root: { props: {} } };
+const focusRing = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2";
+const controlMotion = "transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60";
+const primaryButton = `${controlMotion} ${focusRing} rounded-lg bg-stone-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-stone-700`;
+const secondaryButton = `${controlMotion} ${focusRing} rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 hover:border-amber-400 hover:bg-amber-50`;
+const iconButton = `${controlMotion} ${focusRing} rounded-lg border border-stone-300 bg-white text-stone-900 hover:border-amber-400 hover:bg-amber-50`;
+const dangerButton = `${controlMotion} ${focusRing} rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50`;
+const fieldClass = `${focusRing} rounded-lg border border-stone-300 bg-white px-3 text-stone-900 placeholder:text-stone-400 transition hover:border-amber-300`;
+const inlineLink = `${focusRing} rounded-md text-amber-700 transition hover:bg-amber-50 hover:text-amber-800`;
+const signedOutRedirect = (siteName: string) => `/${siteName}/login`;
+const internalVariantKeys = new Set([
+  "id",
+  "price",
+  "quantity",
+  "active",
+  "status",
+  "sourceOwnerId",
+  "sourceProductId",
+  "sourceVariantId",
+  "sourceProductRef",
+  "sourceVariantRef",
+  "createdAt",
+  "updatedAt",
+]);
+
+const isDisplayValue = (value: unknown): value is string | number | boolean =>
+  ["string", "number", "boolean"].includes(typeof value) && String(value).trim().length > 0;
+
+const getProductAttributeNames = (product?: Product | null) =>
+  (Array.isArray(product?.attributes) ? product.attributes : [])
+    .map((attribute) => {
+      if (typeof attribute === "string") return attribute;
+      if (attribute && typeof attribute === "object" && "name" in attribute) {
+        return String((attribute as { name?: unknown }).name || "");
+      }
+      return "";
+    })
+    .filter((name) => name.trim().length > 0);
+
+const getVariantLabel = (variant: Record<string, unknown> | undefined, product?: Product | null, index = 0) => {
+  if (!variant) return "Default";
+
+  const attributeNames = getProductAttributeNames(product);
+  const preferredValues = attributeNames
+    .map((name) => variant[name])
+    .filter(isDisplayValue)
+    .map((value) => String(value));
+
+  if (preferredValues.length > 0) return preferredValues.join(" / ");
+
+  const nestedAttributes = variant.attributes;
+  if (nestedAttributes && typeof nestedAttributes === "object" && !Array.isArray(nestedAttributes)) {
+    const values = Object.values(nestedAttributes as Record<string, unknown>)
+      .filter(isDisplayValue)
+      .map((value) => String(value));
+
+    if (values.length > 0) return values.join(" / ");
+  }
+
+  const fallbackValues = Object.entries(variant)
+    .filter(([key, value]) => !internalVariantKeys.has(key) && isDisplayValue(value))
+    .map(([, value]) => String(value));
+
+  return fallbackValues.length > 0 ? fallbackValues.join(" / ") : `Option ${index + 1}`;
+};
+
+const getVariantStock = (variant: Record<string, unknown> | undefined) => Number(variant?.quantity ?? 0) || 0;
 
 const StorefrontNavbar = () => {
   const { siteName = "" } = useParams();
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<Product[]>([]);
   const { cart, user, logout } = useStorefrontSession();
@@ -39,21 +106,21 @@ const StorefrontNavbar = () => {
   }, [search, siteName]);
 
   return (
-    <header className="sticky top-0 z-30 border-b border-amber-200 bg-white/90 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-3">
+    <header className="sticky top-0 z-[80] border-b border-amber-200 bg-white/90 backdrop-blur">
+      <div className="pointer-events-auto relative mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-3">
         <Link to={`/${siteName}`} className="font-black uppercase tracking-wide text-stone-900">
           {siteName}
         </Link>
         <nav className="flex items-center gap-3 text-sm text-stone-600">
-          <Link to={`/${siteName}/products`}>Products</Link>
-          <Link to={`/${siteName}/wishlist`}>Wishlist</Link>
-          <Link to={`/${siteName}/cart`}>Cart ({cart.length})</Link>
-          <Link to={`/${siteName}/account`}>Account</Link>
+          <Link to={`/${siteName}/products`} className={inlineLink}>Products</Link>
+          <Link to={`/${siteName}/wishlist`} className={inlineLink}>Wishlist</Link>
+          <Link to={`/${siteName}/cart`} className={inlineLink}>Cart ({cart.length})</Link>
+          <Link to={`/${siteName}/account`} className={inlineLink}>Account</Link>
         </nav>
 
         <div className="relative ml-auto min-w-[220px] flex-1 sm:max-w-sm">
           <input
-            className="h-10 w-full rounded-xl border border-amber-200 bg-white px-3 text-sm text-stone-900 placeholder:text-stone-400"
+            className={`${fieldClass} h-10 w-full rounded-xl border-amber-200 text-sm`}
             placeholder="Search products"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
@@ -83,11 +150,18 @@ const StorefrontNavbar = () => {
         </div>
 
         {user ? (
-          <button type="button" className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900" onClick={logout}>
+          <button
+            type="button"
+            className={secondaryButton}
+            onClick={() => {
+              logout();
+              navigate(`/${siteName}`, { replace: true });
+            }}
+          >
             Logout
           </button>
         ) : (
-          <Link to={`/${siteName}/login`} className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900">
+          <Link to={`/${siteName}/login`} className={secondaryButton}>
             Login
           </Link>
         )}
@@ -195,12 +269,12 @@ const ProductListPage = () => {
           value={search}
           onChange={(event) => setSearchParams({ search: event.target.value, category, sort })}
           placeholder="Search products"
-          className="h-10 min-w-[220px] rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900 placeholder:text-stone-400"
+          className={`${fieldClass} h-10 min-w-[220px] text-sm`}
         />
         <select
           value={category}
           onChange={(event) => setSearchParams({ search, category: event.target.value, sort })}
-          className="h-10 rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900"
+          className={`${fieldClass} h-10 text-sm`}
         >
           <option value="">All categories</option>
           {categories.map((value) => (
@@ -212,7 +286,7 @@ const ProductListPage = () => {
         <select
           value={sort}
           onChange={(event) => setSearchParams({ search, category, sort: event.target.value })}
-          className="h-10 rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900"
+          className={`${fieldClass} h-10 text-sm`}
         >
           <option value="newest">Newest</option>
           <option value="price_asc">Price low to high</option>
@@ -221,7 +295,7 @@ const ProductListPage = () => {
         </select>
         <button
           type="button"
-          className="h-10 rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900"
+          className={`${secondaryButton} h-10`}
           onClick={() => setView((current) => (current === "grid" ? "list" : "grid"))}
         >
           View: {view}
@@ -262,7 +336,7 @@ const ProductDetailPage = () => {
 
       if (mounted) {
         setProduct(item);
-        setVariantId(item.variants?.[0]?.id);
+        setVariantId(item.variants?.find((variant) => getVariantStock(variant) > 0)?.id || item.variants?.[0]?.id);
         setRelated(list.filter((next) => next.id !== item.id).slice(0, 4));
       }
     };
@@ -274,11 +348,20 @@ const ProductDetailPage = () => {
     };
   }, [productId, siteName]);
 
+  const selectedVariant = product?.variants?.find((variant) => variant.id === variantId);
+  const selectedVariantIndex = product?.variants?.findIndex((variant) => variant.id === variantId) ?? -1;
+  const selectedVariantStock = selectedVariant ? getVariantStock(selectedVariant) : Number(product?.quantity ?? 0) || 0;
+  const selectedVariantSoldOut = Boolean(selectedVariant && selectedVariantStock <= 0);
+
+  useEffect(() => {
+    if (!product?.variants?.length || !variantId) return;
+    setQuantity((current) => Math.max(1, Math.min(current, Math.max(1, selectedVariantStock))));
+  }, [product, selectedVariantStock, variantId]);
+
   if (!product) {
     return <main className="p-6">Loading product...</main>;
   }
 
-  const selectedVariant = product.variants?.find((variant) => variant.id === variantId);
   const displayPrice = Number(selectedVariant?.price ?? product.price ?? 0);
 
   return (
@@ -299,24 +382,45 @@ const ProductDetailPage = () => {
             <div className="mt-4">
               <p className="mb-2 text-sm text-stone-500">Variant</p>
               <div className="flex flex-wrap gap-2">
-                {product.variants.map((variant) => (
-                  <button
-                    key={variant.id}
-                    type="button"
-                    onClick={() => setVariantId(variant.id)}
-                    className={`rounded-lg border px-3 py-1 text-sm ${variant.id === variantId ? "border-stone-900 bg-stone-900 text-white" : "border-stone-300 bg-white text-stone-900"}`}
-                  >
-                    {variant.name || variant.id}
-                  </button>
-                ))}
+                {product.variants.map((variant, index) => {
+                  const soldOut = getVariantStock(variant) <= 0;
+                  return (
+                    <button
+                      key={variant.id}
+                      type="button"
+                      onClick={() => setVariantId(variant.id)}
+                      className={`${controlMotion} ${focusRing} rounded-lg border px-3 py-1 text-sm ${
+                        variant.id === variantId && soldOut
+                          ? "border-red-300 bg-red-50 text-red-700 shadow-sm"
+                          : variant.id === variantId
+                            ? "border-stone-900 bg-stone-900 text-white shadow-sm"
+                            : soldOut
+                            ? "border-stone-200 bg-stone-100 text-stone-500 hover:border-stone-300"
+                            : "border-stone-300 bg-white text-stone-900 hover:border-amber-400 hover:bg-amber-50"
+                      }`}
+                    >
+                      {getVariantLabel(variant, product, index)}
+                      {soldOut && <span className="ml-2 text-xs font-semibold text-red-600">Sold out</span>}
+                    </button>
+                  );
+                })}
               </div>
             </div>
+          )}
+
+          {selectedVariant && (
+            <p className={`mt-2 text-sm ${selectedVariantSoldOut ? "text-red-600" : "text-stone-500"}`}>
+              {selectedVariantSoldOut
+                ? `${getVariantLabel(selectedVariant, product, Math.max(0, selectedVariantIndex))} is sold out`
+                : `${selectedVariantStock} available`}
+            </p>
           )}
 
           <div className="mt-5 flex items-center gap-2">
             <button
               type="button"
-              className="h-10 w-10 rounded-lg border border-stone-300 bg-white text-stone-900"
+              className={`${iconButton} h-10 w-10`}
+              disabled={quantity <= 1}
               onClick={() => setQuantity((current) => Math.max(1, current - 1))}
             >
               -
@@ -324,7 +428,8 @@ const ProductDetailPage = () => {
             <div className="min-w-12 text-center text-sm">{quantity}</div>
             <button
               type="button"
-              className="h-10 w-10 rounded-lg border border-stone-300 bg-white text-stone-900"
+              className={`${iconButton} h-10 w-10`}
+              disabled={selectedVariant ? quantity >= selectedVariantStock : false}
               onClick={() => setQuantity((current) => current + 1)}
             >
               +
@@ -334,14 +439,15 @@ const ProductDetailPage = () => {
           <div className="mt-5 flex flex-wrap gap-2">
             <button
               type="button"
-              className="rounded-lg bg-stone-900 px-4 py-2 text-sm font-semibold text-white"
+              className={primaryButton}
+              disabled={selectedVariantSoldOut}
               onClick={() => void addToCart(product.id, variantId, quantity)}
             >
-              Add to cart
+              {selectedVariantSoldOut ? "Sold out" : "Add to cart"}
             </button>
             <button
               type="button"
-              className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm text-stone-900"
+              className={secondaryButton}
               onClick={() => void toggleWishlist(product.id)}
             >
               {wishlist.includes(product.id) ? "Remove wishlist" : "Add wishlist"}
@@ -365,7 +471,7 @@ const ProductDetailPage = () => {
 const CartPage = () => {
   const { siteName = "" } = useParams();
   const [products, setProducts] = useState<Product[]>([]);
-  const { hydrateProductCart, updateCartQty, removeFromCart } = useStorefrontSession();
+  const { user, hydrateProductCart, updateCartQty, removeFromCart } = useStorefrontSession();
 
   useEffect(() => {
     let mounted = true;
@@ -401,43 +507,69 @@ const CartPage = () => {
 
       {items.length === 0 ? (
         <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-6 text-stone-600">
-          Cart is empty. <Link to={`/${siteName}/products`}>Continue shopping</Link>
+          Cart is empty. <Link to={`/${siteName}/products`} className={inlineLink}>Continue shopping</Link>
         </div>
       ) : (
         <>
           <div className="mt-6 space-y-3">
-            {items.map(({ product, variantId, quantity }) => (
-              <article key={`${product.id}-${variantId || ""}`} className="flex flex-wrap items-center gap-3 rounded-xl border border-stone-200 bg-white p-3">
-                <img
-                  src={product.images?.[0] || "https://images.unsplash.com/photo-1576566588028-4147f3842f27?auto=format&fit=crop&w=600&q=60"}
-                  alt={product.name || "Product"}
-                  className="h-20 w-20 rounded-lg object-cover"
-                />
-                <div className="min-w-[160px] flex-1">
-                  <h3 className="font-semibold text-stone-900">{product.name}</h3>
-                  <p className="text-sm text-stone-500">Variant: {variantId || "Default"}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button type="button" className="h-8 w-8 rounded border bg-white text-stone-900" onClick={() => void updateCartQty(product.id, variantId, quantity - 1)}>
-                    -
+            {items.map(({ product, variantId, quantity }) => {
+              const variantIndex = product.variants?.findIndex((variant) => variant.id === variantId) ?? -1;
+              const variant = product.variants?.find((current) => current.id === variantId);
+              const variantStock = variant ? getVariantStock(variant) : Number(product.quantity ?? 0) || 0;
+
+              return (
+                <article key={`${product.id}-${variantId || ""}`} className="flex flex-wrap items-center gap-3 rounded-xl border border-stone-200 bg-white p-3">
+                  <img
+                    src={product.images?.[0] || "https://images.unsplash.com/photo-1576566588028-4147f3842f27?auto=format&fit=crop&w=600&q=60"}
+                    alt={product.name || "Product"}
+                    className="h-20 w-20 rounded-lg object-cover"
+                  />
+                  <div className="min-w-[160px] flex-1">
+                    <h3 className="font-semibold text-stone-900">{product.name}</h3>
+                    <p className="text-sm text-stone-500">
+                      Variant: {variant ? getVariantLabel(variant, product, Math.max(0, variantIndex)) : "Default"}
+                      {variant && variantStock <= 0 && <span className="ml-2 font-semibold text-red-600">Sold out</span>}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className={`${iconButton} h-8 w-8`}
+                      onClick={() => void updateCartQty(product.id, variantId, quantity - 1)}
+                    >
+                      -
+                    </button>
+                    <span className="text-sm">{quantity}</span>
+                    <button
+                      type="button"
+                      className={`${iconButton} h-8 w-8`}
+                      disabled={variant ? quantity >= variantStock : false}
+                      onClick={() => void updateCartQty(product.id, variantId, quantity + 1)}
+                    >
+                      +
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-100 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      void removeFromCart(product.id, variantId);
+                    }}
+                  >
+                    Remove
                   </button>
-                  <span className="text-sm">{quantity}</span>
-                  <button type="button" className="h-8 w-8 rounded border bg-white text-stone-900" onClick={() => void updateCartQty(product.id, variantId, quantity + 1)}>
-                    +
-                  </button>
-                </div>
-                <button type="button" className="text-sm text-red-600" onClick={() => void removeFromCart(product.id, variantId)}>
-                  Remove
-                </button>
-              </article>
-            ))}
+                </article>
+              );
+            })}
           </div>
 
           <div className="mt-6 rounded-2xl border border-stone-200 bg-white p-4">
             <p className="text-sm text-stone-600">Subtotal: EGP {subtotal.toFixed(2)}</p>
             <p className="text-sm text-stone-600">Shipping: EGP {shipping.toFixed(2)}</p>
             <p className="mt-1 text-lg font-semibold text-stone-900">Total: EGP {total.toFixed(2)}</p>
-            <Link to={`/${siteName}/checkout`} className="mt-4 inline-block rounded-lg bg-stone-900 px-4 py-2 text-sm font-semibold text-white">
+            <Link to={user ? `/${siteName}/checkout` : `/${siteName}/login`} className={`mt-4 inline-block ${primaryButton}`}>
               Proceed to checkout
             </Link>
           </div>
@@ -467,7 +599,7 @@ const WishlistPage = () => {
   }, [siteName]);
 
   if (!user) {
-    return <Navigate to={`/${siteName}/login`} replace />;
+    return <Navigate to={signedOutRedirect(siteName)} replace />;
   }
 
   const wishlistProducts = products.filter((product) => wishlist.includes(product.id));
@@ -483,7 +615,7 @@ const WishlistPage = () => {
             <div key={product.id}>
               <ProductCard product={product} onAddToCart={(productId) => void addToCart(productId)} />
               <button
-                className="mt-2 text-sm text-red-600"
+                className={`mt-2 ${dangerButton}`}
                 type="button"
                 onClick={() => void toggleWishlist(product.id)}
               >
@@ -508,6 +640,7 @@ const CheckoutPage = () => {
   const [street, setStreet] = useState("");
   const [building, setBuilding] = useState("");
   const [notes, setNotes] = useState("");
+  const [placingOrder, setPlacingOrder] = useState(false);
   const { user, cart, hydrateProductCart, updateCartQty } = useStorefrontSession();
 
   useEffect(() => {
@@ -534,7 +667,7 @@ const CheckoutPage = () => {
   }, [user]);
 
   if (!user) {
-    return <Navigate to={`/${siteName}/login`} replace />;
+    return <Navigate to={signedOutRedirect(siteName)} replace />;
   }
 
   const items = hydrateProductCart(products);
@@ -547,42 +680,52 @@ const CheckoutPage = () => {
   const total = subtotal + shippingFee;
 
   const placeOrder = async () => {
-    const order = await storefrontApi.createOrder(siteName, {
-      customerEmail: user.email,
-      customerName,
-      customerPhone,
-      shippingAddress: {
-        id: `addr-${Date.now()}`,
-        label: "Home",
-        fullName: customerName,
-        phone: customerPhone,
-        city,
-        area,
-        street,
-        building,
-        floor: "",
-        notes,
-        isDefault: true,
-      },
-      items: items.map((item) => {
-        const variant = item.product.variants?.find((current) => current.id === item.variantId);
-        return {
-          productId: item.product.id,
-          productName: item.product.name || "Product",
-          variantId: item.variantId,
-          variantName: variant?.name || item.variantId || "Default",
-          quantity: item.quantity,
-          price: Number(variant?.price ?? item.product.price ?? 0),
-        };
-      }),
-      subtotal,
-      shippingFee,
-      total,
-      notes,
-    });
+    if (placingOrder) {
+      return;
+    }
 
-    await Promise.all(cart.map((item) => updateCartQty(item.productId, item.variantId, 0)));
-    navigate(`/${siteName}/checkout/confirmation/${order.orderId}`);
+    setPlacingOrder(true);
+    try {
+      const order = await storefrontApi.createOrder(siteName, {
+        customerEmail: user.email,
+        customerName,
+        customerPhone,
+        shippingAddress: {
+          id: `addr-${Date.now()}`,
+          label: "Home",
+          fullName: customerName,
+          phone: customerPhone,
+          city,
+          area,
+          street,
+          building,
+          floor: "",
+          notes,
+          isDefault: true,
+        },
+        items: items.map((item) => {
+          const variant = item.product.variants?.find((current) => current.id === item.variantId);
+          const variantIndex = item.product.variants?.findIndex((current) => current.id === item.variantId) ?? -1;
+          return {
+            productId: item.product.id,
+            productName: item.product.name || "Product",
+            variantId: item.variantId,
+            variantName: variant ? getVariantLabel(variant, item.product, Math.max(0, variantIndex)) : "Default",
+            quantity: item.quantity,
+            price: Number(variant?.price ?? item.product.price ?? 0),
+          };
+        }),
+        subtotal,
+        shippingFee,
+        total,
+        notes,
+      });
+
+      await Promise.all(cart.map((item) => updateCartQty(item.productId, item.variantId, 0)));
+      navigate(`/${siteName}/checkout/confirmation/${order.orderId}`);
+    } finally {
+      setPlacingOrder(false);
+    }
   };
 
   return (
@@ -593,27 +736,41 @@ const CheckoutPage = () => {
         <section className="rounded-2xl border border-stone-200 bg-white p-4">
           <h2 className="text-lg font-semibold text-stone-900">Shipping details</h2>
           <div className="mt-4 space-y-3">
-            <input className="h-10 w-full rounded-lg border border-stone-300 bg-white px-3 text-stone-900 placeholder:text-stone-400" value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Full name" />
-            <input className="h-10 w-full rounded-lg border border-stone-300 bg-white px-3 text-stone-900 placeholder:text-stone-400" value={customerPhone} onChange={(event) => setCustomerPhone(event.target.value)} placeholder="Phone" />
-            <input className="h-10 w-full rounded-lg border border-stone-300 bg-white px-3 text-stone-900 placeholder:text-stone-400" value={city} onChange={(event) => setCity(event.target.value)} placeholder="City" />
-            <input className="h-10 w-full rounded-lg border border-stone-300 bg-white px-3 text-stone-900 placeholder:text-stone-400" value={area} onChange={(event) => setArea(event.target.value)} placeholder="Area" />
-            <input className="h-10 w-full rounded-lg border border-stone-300 bg-white px-3 text-stone-900 placeholder:text-stone-400" value={street} onChange={(event) => setStreet(event.target.value)} placeholder="Street" />
-            <input className="h-10 w-full rounded-lg border border-stone-300 bg-white px-3 text-stone-900 placeholder:text-stone-400" value={building} onChange={(event) => setBuilding(event.target.value)} placeholder="Building" />
-            <textarea className="min-h-20 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-stone-900 placeholder:text-stone-400" value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Notes" />
+            <input className={`${fieldClass} h-10 w-full`} value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Full name" />
+            <input className={`${fieldClass} h-10 w-full`} value={customerPhone} onChange={(event) => setCustomerPhone(event.target.value)} placeholder="Phone" />
+            <input className={`${fieldClass} h-10 w-full`} value={city} onChange={(event) => setCity(event.target.value)} placeholder="City" />
+            <input className={`${fieldClass} h-10 w-full`} value={area} onChange={(event) => setArea(event.target.value)} placeholder="Area" />
+            <input className={`${fieldClass} h-10 w-full`} value={street} onChange={(event) => setStreet(event.target.value)} placeholder="Street" />
+            <input className={`${fieldClass} h-10 w-full`} value={building} onChange={(event) => setBuilding(event.target.value)} placeholder="Building" />
+            <textarea className={`${fieldClass} min-h-20 w-full py-2`} value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Notes" />
           </div>
         </section>
 
         <section className="rounded-2xl border border-stone-200 bg-white p-4">
           <h2 className="text-lg font-semibold text-stone-900">Order summary</h2>
           <ul className="mt-4 space-y-2 text-sm text-stone-600">
-            {items.map((item) => (
-              <li key={`${item.product.id}-${item.variantId || ""}`} className="flex justify-between">
-                <span>{item.product.name} x{item.quantity}</span>
-                <span>
-                  EGP {(Number(item.product.price || 0) * item.quantity).toFixed(2)}
-                </span>
-              </li>
-            ))}
+            {items.map((item) => {
+              const variant = item.product.variants?.find((current) => current.id === item.variantId);
+              const variantIndex = item.product.variants?.findIndex((current) => current.id === item.variantId) ?? -1;
+              const unitPrice = Number(variant?.price ?? item.product.price ?? 0);
+
+              return (
+                <li key={`${item.product.id}-${item.variantId || ""}`} className="flex justify-between gap-3">
+                  <span>
+                    {item.product.name}
+                    {variant && (
+                      <span className="block text-xs text-stone-500">
+                        {getVariantLabel(variant, item.product, Math.max(0, variantIndex))}
+                      </span>
+                    )}
+                    <span className="block text-xs text-stone-500">Qty {item.quantity}</span>
+                  </span>
+                  <span>
+                    EGP {(unitPrice * item.quantity).toFixed(2)}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
           <div className="mt-4 border-t border-stone-200 pt-3 text-sm text-stone-700">
             <p>Subtotal: EGP {subtotal.toFixed(2)}</p>
@@ -622,10 +779,11 @@ const CheckoutPage = () => {
           </div>
           <button
             type="button"
-            className="mt-4 w-full rounded-lg bg-stone-900 px-4 py-2 text-sm font-semibold text-white"
+            className={`mt-4 w-full ${primaryButton}`}
+            disabled={placingOrder || !items.length}
             onClick={() => void placeOrder()}
           >
-            Place COD order
+            {placingOrder ? "Placing order..." : "Place COD order"}
           </button>
         </section>
       </div>
@@ -640,7 +798,7 @@ const OrderConfirmationPage = () => {
     <main className="mx-auto max-w-3xl px-4 py-12 text-center">
       <h1 className="text-3xl font-bold text-stone-900">Order placed</h1>
       <p className="mt-2 text-stone-600">Your order number is {orderId}</p>
-      <Link to={`/${siteName}/products`} className="mt-6 inline-block rounded-lg bg-stone-900 px-4 py-2 text-sm font-semibold text-white">
+      <Link to={`/${siteName}/products`} className={`mt-6 inline-block ${primaryButton}`}>
         Continue shopping
       </Link>
     </main>
@@ -653,15 +811,23 @@ const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const { login } = useStorefrontSession();
 
   const submit = async () => {
+    if (submitting) {
+      return;
+    }
+
     setError("");
+    setSubmitting(true);
     try {
       await login(email, password);
       navigate(`/${siteName}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to login");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -669,14 +835,19 @@ const LoginPage = () => {
     <main className="mx-auto max-w-md px-4 py-12">
       <h1 className="text-3xl font-bold text-stone-900">Login</h1>
       <div className="mt-5 space-y-3 rounded-2xl border border-stone-200 bg-white p-4">
-        <input className="h-10 w-full rounded-lg border border-stone-300 bg-white px-3 text-stone-900 placeholder:text-stone-400" placeholder="Email" value={email} onChange={(event) => setEmail(event.target.value)} />
-        <input className="h-10 w-full rounded-lg border border-stone-300 bg-white px-3 text-stone-900 placeholder:text-stone-400" placeholder="Password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
+        <input className={`${fieldClass} h-10 w-full`} placeholder="Email" value={email} onChange={(event) => setEmail(event.target.value)} />
+        <input className={`${fieldClass} h-10 w-full`} placeholder="Password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
         {error && <p className="text-sm text-red-600">{error}</p>}
-        <button type="button" className="w-full rounded-lg bg-stone-900 px-4 py-2 text-sm font-semibold text-white" onClick={() => void submit()}>
-          Login
+        <button
+          type="button"
+          className={`w-full ${primaryButton}`}
+          disabled={submitting}
+          onClick={() => void submit()}
+        >
+          {submitting ? "Logging in..." : "Login"}
         </button>
         <p className="text-sm text-stone-600">
-          No account? <Link to={`/${siteName}/signup`}>Sign up</Link>
+          No account? <Link to={`/${siteName}/signup`} className={inlineLink}>Sign up</Link>
         </p>
       </div>
     </main>
@@ -690,15 +861,23 @@ const SignupPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const { signup } = useStorefrontSession();
 
   const submit = async () => {
+    if (submitting) {
+      return;
+    }
+
     setError("");
+    setSubmitting(true);
     try {
       await signup(email, name, password);
       navigate(`/${siteName}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to signup");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -706,12 +885,17 @@ const SignupPage = () => {
     <main className="mx-auto max-w-md px-4 py-12">
       <h1 className="text-3xl font-bold text-stone-900">Create account</h1>
       <div className="mt-5 space-y-3 rounded-2xl border border-stone-200 bg-white p-4">
-        <input className="h-10 w-full rounded-lg border border-stone-300 bg-white px-3 text-stone-900 placeholder:text-stone-400" placeholder="Name" value={name} onChange={(event) => setName(event.target.value)} />
-        <input className="h-10 w-full rounded-lg border border-stone-300 bg-white px-3 text-stone-900 placeholder:text-stone-400" placeholder="Email" value={email} onChange={(event) => setEmail(event.target.value)} />
-        <input className="h-10 w-full rounded-lg border border-stone-300 bg-white px-3 text-stone-900 placeholder:text-stone-400" placeholder="Password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
+        <input className={`${fieldClass} h-10 w-full`} placeholder="Name" value={name} onChange={(event) => setName(event.target.value)} />
+        <input className={`${fieldClass} h-10 w-full`} placeholder="Email" value={email} onChange={(event) => setEmail(event.target.value)} />
+        <input className={`${fieldClass} h-10 w-full`} placeholder="Password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
         {error && <p className="text-sm text-red-600">{error}</p>}
-        <button type="button" className="w-full rounded-lg bg-stone-900 px-4 py-2 text-sm font-semibold text-white" onClick={() => void submit()}>
-          Sign up
+        <button
+          type="button"
+          className={`w-full ${primaryButton}`}
+          disabled={submitting}
+          onClick={() => void submit()}
+        >
+          {submitting ? "Creating account..." : "Sign up"}
         </button>
       </div>
     </main>
@@ -745,7 +929,7 @@ const OrderHistoryPage = () => {
   }, [siteName, user]);
 
   if (!user) {
-    return <Navigate to={`/${siteName}/login`} replace />;
+    return <Navigate to={signedOutRedirect(siteName)} replace />;
   }
 
   return (
@@ -769,6 +953,7 @@ const OrderHistoryPage = () => {
 const AccountPage = () => {
   const { siteName = "" } = useParams();
   const { user, saveAddresses } = useStorefrontSession();
+  const [savingAddress, setSavingAddress] = useState(false);
   const [address, setAddress] = useState<SiteAddress>({
     id: `addr-${Date.now()}`,
     label: "Home",
@@ -784,7 +969,7 @@ const AccountPage = () => {
   });
 
   if (!user) {
-    return <Navigate to={`/${siteName}/login`} replace />;
+    return <Navigate to={signedOutRedirect(siteName)} replace />;
   }
 
   return (
@@ -795,23 +980,31 @@ const AccountPage = () => {
       <section className="mt-6 rounded-2xl border border-stone-200 bg-white p-4">
         <h2 className="text-lg font-semibold text-stone-900">Saved addresses</h2>
         <div className="mt-3 grid gap-3 md:grid-cols-2">
-          <input className="h-10 rounded-lg border border-stone-300 bg-white px-3 text-stone-900 placeholder:text-stone-400" value={address.fullName} placeholder="Full name" onChange={(event) => setAddress({ ...address, fullName: event.target.value })} />
-          <input className="h-10 rounded-lg border border-stone-300 bg-white px-3 text-stone-900 placeholder:text-stone-400" value={address.phone} placeholder="Phone" onChange={(event) => setAddress({ ...address, phone: event.target.value })} />
-          <input className="h-10 rounded-lg border border-stone-300 bg-white px-3 text-stone-900 placeholder:text-stone-400" value={address.city} placeholder="City" onChange={(event) => setAddress({ ...address, city: event.target.value })} />
-          <input className="h-10 rounded-lg border border-stone-300 bg-white px-3 text-stone-900 placeholder:text-stone-400" value={address.area} placeholder="Area" onChange={(event) => setAddress({ ...address, area: event.target.value })} />
-          <input className="h-10 rounded-lg border border-stone-300 bg-white px-3 text-stone-900 placeholder:text-stone-400" value={address.street} placeholder="Street" onChange={(event) => setAddress({ ...address, street: event.target.value })} />
-          <input className="h-10 rounded-lg border border-stone-300 bg-white px-3 text-stone-900 placeholder:text-stone-400" value={address.building} placeholder="Building" onChange={(event) => setAddress({ ...address, building: event.target.value })} />
+          <input className={`${fieldClass} h-10`} value={address.fullName} placeholder="Full name" onChange={(event) => setAddress({ ...address, fullName: event.target.value })} />
+          <input className={`${fieldClass} h-10`} value={address.phone} placeholder="Phone" onChange={(event) => setAddress({ ...address, phone: event.target.value })} />
+          <input className={`${fieldClass} h-10`} value={address.city} placeholder="City" onChange={(event) => setAddress({ ...address, city: event.target.value })} />
+          <input className={`${fieldClass} h-10`} value={address.area} placeholder="Area" onChange={(event) => setAddress({ ...address, area: event.target.value })} />
+          <input className={`${fieldClass} h-10`} value={address.street} placeholder="Street" onChange={(event) => setAddress({ ...address, street: event.target.value })} />
+          <input className={`${fieldClass} h-10`} value={address.building} placeholder="Building" onChange={(event) => setAddress({ ...address, building: event.target.value })} />
         </div>
         <button
           type="button"
-          className="mt-4 rounded-lg bg-stone-900 px-4 py-2 text-sm font-semibold text-white"
-          onClick={() => void saveAddresses([address])}
+          className={`mt-4 ${primaryButton}`}
+          disabled={savingAddress}
+          onClick={async () => {
+            setSavingAddress(true);
+            try {
+              await saveAddresses([address]);
+            } finally {
+              setSavingAddress(false);
+            }
+          }}
         >
-          Save address
+          {savingAddress ? "Saving..." : "Save address"}
         </button>
       </section>
 
-      <Link to={`/${siteName}/account/orders`} className="mt-4 inline-block text-sm text-amber-700">
+      <Link to={`/${siteName}/account/orders`} className={`mt-4 inline-block text-sm ${inlineLink}`}>
         View order history
       </Link>
     </main>

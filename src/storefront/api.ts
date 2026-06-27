@@ -80,16 +80,16 @@ export const storefrontApi = {
   getProduct: (siteName: string, productId: string) =>
     request<Product>(`${API_BASE}/sites/${encodeURIComponent(siteName)}/products/${encodeURIComponent(productId)}`),
 
-  signup: (siteName: string, email: string, name: string, password: string) =>
+  signup: (siteName: string, idToken: string, name: string) =>
     request<SiteUser>(`${API_BASE}/auth/signup`, {
       method: "POST",
-      body: JSON.stringify({ siteName, email, name, password }),
+      body: JSON.stringify({ siteName, idToken, name }),
     }),
 
-  login: (siteName: string, email: string, password: string) =>
+  login: (siteName: string, idToken: string) =>
     request<SiteUser>(`${API_BASE}/auth/login`, {
       method: "POST",
-      body: JSON.stringify({ siteName, email, password }),
+      body: JSON.stringify({ siteName, idToken }),
     }),
 
   getUser: (siteName: string, email: string) =>
