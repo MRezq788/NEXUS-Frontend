@@ -283,24 +283,6 @@ export const BuilderPage = () => {
             </button>
           )}
           <button
-            className="rounded-lg border border-red-200 bg-red-50 px-3 py-1 text-sm text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
-            type="button"
-            disabled={deletingPage || Boolean(activeVisiblePage?.isHomepage)}
-            onClick={() => void deleteCurrentPage()}
-            title={activeVisiblePage?.isHomepage ? "Homepage cannot be deleted" : "Delete current page"}
-          >
-            {deletingPage ? "Deleting..." : "Delete page"}
-          </button>
-          {aiPageLists && (
-            <button
-              className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1 text-sm text-amber-900"
-              type="button"
-              onClick={() => setAiPageLists(null)}
-            >
-              Exit Preview
-            </button>
-          )}
-          <button
             className="rounded-lg bg-stone-900 px-3 py-1 text-sm text-white transition hover:bg-stone-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
             type="button"
             disabled={saving}
