@@ -14,7 +14,6 @@ export function BuilderCopilot({ siteName, pages, activePageId, onUpdateAiPages 
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([
     { role: "assistant", content: "Tell me what you want to build or edit." },
   ]);
@@ -35,14 +34,13 @@ export function BuilderCopilot({ siteName, pages, activePageId, onUpdateAiPages 
     setMessages((prev) => [...prev, { role: "user", content: text }]);
     setInput("");
     setLoading(true);
-    setError("");
 
     try {
       const result = await storefrontApi.generateWithAi(siteName, text, pages, activePageId);
       onUpdateAiPages(result);
       setMessages((prev) => [...prev, { role: "assistant", content: "I updated the preview. Save when it looks right." }]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to generate AI content");
+      } catch (err) {
+        setMessages((prev) => [...prev, { role: "assistant", content: "Something went wrong. Please try again." }]);
     } finally {
       setLoading(false);
     }
@@ -83,7 +81,6 @@ export function BuilderCopilot({ siteName, pages, activePageId, onUpdateAiPages 
                 </div>
               </div>
             )}
-            {error && <div className="rounded-lg bg-red-50 p-2 text-xs text-red-600">{error}</div>}
           </div>
 
           <form onSubmit={handleSubmit} className="border-t border-stone-200 bg-white p-3">
