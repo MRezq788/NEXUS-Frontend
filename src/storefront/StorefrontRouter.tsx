@@ -26,6 +26,15 @@ const dangerButton = `${controlMotion} ${focusRing} rounded-lg px-3 py-2 text-sm
 const fieldClass = `${focusRing} rounded-lg border border-stone-300 bg-white px-3 text-stone-900 placeholder:text-stone-400 transition hover:border-amber-300`;
 const inlineLink = `${focusRing} rounded-md text-amber-700 transition hover:bg-amber-50 hover:text-amber-800`;
 const signedOutRedirect = (siteName: string) => `/${siteName}/login`;
+const reservedPageSlugs = new Set([
+  "products",
+  "cart",
+  "wishlist",
+  "checkout",
+  "account",
+  "login",
+  "signup",
+]);
 const internalVariantKeys = new Set([
   "id",
   "price",
@@ -84,12 +93,55 @@ const getVariantLabel = (variant: Record<string, unknown> | undefined, product?:
 
 const getVariantStock = (variant: Record<string, unknown> | undefined) => Number(variant?.quantity ?? 0) || 0;
 
+const normalizePageSlug = (slug?: string) =>
+  String(slug || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^\/+|\/+$/g, "");
+
 const StorefrontNavbar = () => {
   const { siteName = "" } = useParams();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<Product[]>([]);
+  const [pages, setPages] = useState<SitePage[]>([]);
   const { cart, user, logout } = useStorefrontSession();
+
+  useEffect(() => {
+    let mounted = true;
+
+    const run = async () => {
+      if (!siteName) {
+        return;
+      }
+
+      try {
+        const pageList = await storefrontApi.listPages(siteName);
+        if (mounted) {
+          setPages(pageList);
+        }
+      } catch {
+        if (mounted) {
+          setPages([]);
+        }
+      }
+    };
+
+    void run();
+
+    return () => {
+      mounted = false;
+    };
+  }, [siteName]);
+
+  const navPages = useMemo(
+    () =>
+      pages
+        .filter((page) => !page.isHomepage)
+        .map((page) => ({ ...page, pageSlug: normalizePageSlug(page.pageSlug) }))
+        .filter((page) => page.pageSlug && !reservedPageSlugs.has(page.pageSlug)),
+    [pages],
+  );
 
   useEffect(() => {
     if (!search.trim()) {
@@ -113,6 +165,11 @@ const StorefrontNavbar = () => {
         </Link>
         <nav className="flex items-center gap-3 text-sm text-stone-600">
           <Link to={`/${siteName}/products`} className={inlineLink}>Products</Link>
+          {navPages.map((page) => (
+            <Link key={page.id} to={`/${siteName}/${page.pageSlug}`} className={inlineLink}>
+              {page.pageName}
+            </Link>
+          ))}
           <Link to={`/${siteName}/wishlist`} className={inlineLink}>Wishlist</Link>
           <Link to={`/${siteName}/cart`} className={inlineLink}>Cart ({cart.length})</Link>
           <Link to={`/${siteName}/account`} className={inlineLink}>Account</Link>
@@ -1027,14 +1084,14 @@ const StorefrontShell = () => {
         <Route path="account/orders" element={<OrderHistoryPage />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="signup" element={<SignupPage />} />
-        <Route path=":pageSlug" element={<PageBySlug />} />
+        <Route path="*" element={<PageBySlug />} />
       </Routes>
     </>
   );
 };
 
 const PageBySlug = () => {
-  const { pageSlug = "" } = useParams();
+  const { "*": pageSlug = "" } = useParams();
   return <DynamicPage slug={pageSlug} />;
 };
 
