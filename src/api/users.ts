@@ -79,6 +79,10 @@ export interface AllocateProductToStoreResult {
   ownerRemainingProductQuantity: number;
   siteVariantQuantity: number;
   siteProductQuantity: number;
+  supabaseSync?:
+    | { status: "synced" }
+    | { status: "skipped"; reason: string }
+    | { status: "failed"; error: string };
 }
 
 export interface InventoryAllocationPayload {

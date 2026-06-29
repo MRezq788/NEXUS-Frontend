@@ -98,8 +98,16 @@ export function StoreProductAllocationPage() {
         variantId,
         quantity,
       });
+      const syncStatus = result.data.supabaseSync;
+      const syncMessage =
+        syncStatus?.status === "failed"
+          ? ` Allocation saved, but Supabase sync failed: ${syncStatus.error}`
+          : syncStatus?.status === "skipped"
+            ? ` Allocation saved, but Supabase sync was skipped (${syncStatus.reason}).`
+            : " Supabase sync completed.";
+
       setAllocationMessage(
-        `Allocated ${result.data.allocatedQuantity} unit(s) to ${siteName}. Store variant now has ${result.data.siteVariantQuantity}.`,
+        `Allocated ${result.data.allocatedQuantity} unit(s) to ${siteName}. Store variant now has ${result.data.siteVariantQuantity}.${syncMessage}`,
       );
       await loadData();
     } catch (err) {
