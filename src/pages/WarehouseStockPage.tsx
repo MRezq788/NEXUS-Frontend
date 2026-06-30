@@ -76,7 +76,7 @@ export function StockPage() {
     onConfirm: () => {},
   });
 
-  // Toast state
+  // Toast stat
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error";
