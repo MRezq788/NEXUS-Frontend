@@ -46,6 +46,32 @@ export interface OwnerStore {
   updatedAt?: unknown;
 }
 
+export interface OwnerStorefrontOrder {
+  id: string;
+  orderId?: string;
+  siteName: string;
+  customerEmail?: string;
+  customerName?: string;
+  customerPhone?: string;
+  items?: Array<Record<string, unknown>>;
+  subtotal?: number;
+  shippingFee?: number;
+  total: number;
+  paymentMethod?: string;
+  status?: string;
+  notes?: string;
+  createdAt?: unknown;
+  updatedAt?: unknown;
+}
+
+export type StorefrontOrderStatus =
+  | "pending"
+  | "confirmed"
+  | "processing"
+  | "shipped"
+  | "completed"
+  | "cancelled";
+
 export interface StoreAllocationVariant {
   id: string;
   quantity: number;
@@ -274,6 +300,26 @@ export const usersApi = {
 
   getMyStores: async () => {
     return fetchApi<{ stores: OwnerStore[] }>(`/users/stores`);
+  },
+
+  getStorefrontOrders: async (limit?: number) => {
+    return fetchApi<{ orders: OwnerStorefrontOrder[] }>(`/users/storefront-orders`, {
+      params: { limit },
+    });
+  },
+
+  updateStorefrontOrderStatus: async (
+    siteName: string,
+    orderId: string,
+    status: StorefrontOrderStatus,
+  ) => {
+    return fetchApi<{ order: OwnerStorefrontOrder }>(
+      `/users/storefront-orders/${encodeURIComponent(siteName)}/${encodeURIComponent(orderId)}/status`,
+      {
+        method: "PATCH",
+        body: { status },
+      },
+    );
   },
 
   createStore: async (siteName: string, storeDisplayName?: string) => {

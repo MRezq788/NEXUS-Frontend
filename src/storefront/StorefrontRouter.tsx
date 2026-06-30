@@ -528,7 +528,7 @@ const ProductDetailPage = () => {
 const CartPage = () => {
   const { siteName = "" } = useParams();
   const [products, setProducts] = useState<Product[]>([]);
-  const { user, hydrateProductCart, updateCartQty, removeFromCart } = useStorefrontSession();
+  const { user, hydrateProductCart, removeFromCart } = useStorefrontSession();
 
   useEffect(() => {
     let mounted = true;
@@ -572,8 +572,6 @@ const CartPage = () => {
             {items.map(({ product, variantId, quantity }) => {
               const variantIndex = product.variants?.findIndex((variant) => variant.id === variantId) ?? -1;
               const variant = product.variants?.find((current) => current.id === variantId);
-              const variantStock = variant ? getVariantStock(variant) : Number(product.quantity ?? 0) || 0;
-
               return (
                 <article key={`${product.id}-${variantId || ""}`} className="flex flex-wrap items-center gap-3 rounded-xl border border-stone-200 bg-white p-3">
                   <img
@@ -585,35 +583,16 @@ const CartPage = () => {
                     <h3 className="font-semibold text-stone-900">{product.name}</h3>
                     <p className="text-sm text-stone-500">
                       Variant: {variant ? getVariantLabel(variant, product, Math.max(0, variantIndex)) : "Default"}
-                      {variant && variantStock <= 0 && <span className="ml-2 font-semibold text-red-600">Sold out</span>}
+                      {variant && getVariantStock(variant) <= 0 && <span className="ml-2 font-semibold text-red-600">Sold out</span>}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      className={`${iconButton} h-8 w-8`}
-                      onClick={() => void updateCartQty(product.id, variantId, quantity - 1)}
-                    >
-                      -
-                    </button>
-                    <span className="text-sm">{quantity}</span>
-                    <button
-                      type="button"
-                      className={`${iconButton} h-8 w-8`}
-                      disabled={variant ? quantity >= variantStock : false}
-                      onClick={() => void updateCartQty(product.id, variantId, quantity + 1)}
-                    >
-                      +
-                    </button>
-                  </div>
+                  <p className="text-sm font-semibold text-stone-900">
+                    EGP {(Number(variant?.price ?? product.price ?? 0) * quantity).toFixed(2)}
+                  </p>
                   <button
                     type="button"
-                    className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-100 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      void removeFromCart(product.id, variantId);
-                    }}
+                    className="pointer-events-auto cursor-pointer rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-100 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2"
+                    onClick={() => void removeFromCart(product.id, variantId)}
                   >
                     Remove
                   </button>

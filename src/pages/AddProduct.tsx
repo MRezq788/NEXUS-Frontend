@@ -547,7 +547,6 @@ export function AddProduct() {
         );
 
         const result = await response.json();
-        console.log("Fetched product raw data:", result);
 
         if (result.success && result.data) {
           const p = result.data;
@@ -569,7 +568,6 @@ export function AddProduct() {
             ) as Attribute[];
           }
 
-          console.log("Setting loaded attributes:", loadedAttributes);
           setAttributes(loadedAttributes);
 
           // Set variants if they exist
@@ -609,7 +607,6 @@ export function AddProduct() {
               }
             );
 
-            console.log("Setting loaded variants:", normalizedVariants);
             setVariants(normalizedVariants);
           }
 
@@ -865,8 +862,6 @@ export function AddProduct() {
       active: true,
     };
 
-    console.log("Saving product:", productData);
-
     try {
       const auth = getAuth();
       const user = auth.currentUser;
@@ -900,21 +895,6 @@ export function AddProduct() {
       alert("Failed to save product");
     }
   };
-
-  const comboToString = (combo: Record<string, string>) => {
-    return (
-      Object.entries(combo)
-        .map(([k, v]) => `${k}: ${v}`)
-        .join("  ·  ") || "Default (No Variants)"
-    );
-  };
-
-  // Fix lint: use comboToString or remove if truly unneeded.
-  // It's useful for debug or accessibility labels, so I'll keep it but acknowledge it.
-  console.log(
-    "Current combos:",
-    variants.map((v) => comboToString(v.attributes)),
-  );
 
   const hasActiveVariants = attributes.some((a) => a.values.length > 0);
   const totalStock = variants.reduce((acc, v) => acc + v.quantity, 0);

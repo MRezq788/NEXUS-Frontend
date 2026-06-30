@@ -8,7 +8,6 @@ export const sidebarTabs: SidebarTab[] = [
   { title: "Orders", route: "/orders" },
   { title: "Reports", route: "/reports" },
   { title: "My Stores", route: "/my-stores" },
-  { title: "Settings", route: "/dashboard" },
   { title: "Staff Management", route: "/staff-management" },
 ];
 

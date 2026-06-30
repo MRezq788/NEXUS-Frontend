@@ -1,17 +1,60 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usersApi } from "../api";
 import { useTheme } from "../contexts/ThemeContext";
+import type { StorefrontOrderStatus } from "../api/users";
+
+const storefrontOrderStatuses: StorefrontOrderStatus[] = [
+  "pending",
+  "confirmed",
+  "processing",
+  "shipped",
+  "completed",
+  "cancelled",
+];
 
 interface OrderItem {
   id: string;
   total: number;
-  type: string;
-  status?: string; // Added status field
-  createdAt: Date | string;
+  type: "sold" | "bought" | "storefront" | string;
+  status?: string;
+  createdAt: unknown;
+  siteName?: string;
+  customerName?: string;
+  customerEmail?: string;
+  sourceLabel?: string;
 }
 
-function formatOrderDate(value: Date | string): string {
-  const date = value instanceof Date ? value : new Date(value);
+function toOrderDate(value: unknown): Date {
+  if (value instanceof Date) {
+    return value;
+  }
+
+  if (typeof value === "string" || typeof value === "number") {
+    return new Date(value);
+  }
+
+  if (value && typeof value === "object") {
+    const timestamp = value as {
+      seconds?: number;
+      _seconds?: number;
+      toDate?: () => Date;
+    };
+
+    if (typeof timestamp.toDate === "function") {
+      return timestamp.toDate();
+    }
+
+    const seconds = timestamp.seconds ?? timestamp._seconds;
+    if (typeof seconds === "number") {
+      return new Date(seconds * 1000);
+    }
+  }
+
+  return new Date(Number.NaN);
+}
+
+function formatOrderDate(value: unknown): string {
+  const date = toOrderDate(value);
   if (Number.isNaN(date.getTime())) {
     return "Unknown date";
   }
@@ -23,9 +66,8 @@ export function BusinessOwnerOrdersPage() {
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [typeFilter, setTypeFilter] = useState<"all" | "sold" | "bought">(
-    "all",
-  );
+  const [typeFilter, setTypeFilter] = useState<"all" | "sold" | "bought" | "storefront">("all");
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -39,10 +81,33 @@ export function BusinessOwnerOrdersPage() {
         throw new Error("Unable to load your profile.");
       }
 
-      const ordersResponse = await usersApi.getRecentOrders(userId, 100);
-      const recentOrders = ordersResponse.data?.recentOrders || [];
+      const [ordersResponse, storefrontOrdersResponse] = await Promise.all([
+        usersApi.getRecentOrders(userId, 100),
+        usersApi.getStorefrontOrders(100),
+      ]);
 
-      setOrders(recentOrders);
+      const recentOrders: OrderItem[] = (ordersResponse.data?.recentOrders || []).map((order) => ({
+        ...order,
+        sourceLabel: order.type === "sold" ? "POS" : "Warehouse",
+      }));
+
+      const storefrontOrders: OrderItem[] = (storefrontOrdersResponse.data?.orders || []).map((order) => ({
+        id: order.id,
+        total: Number(order.total) || 0,
+        type: "storefront",
+        status: order.status,
+        createdAt: order.createdAt,
+        siteName: order.siteName,
+        customerName: order.customerName,
+        customerEmail: order.customerEmail,
+        sourceLabel: "Storefront",
+      }));
+
+      setOrders(
+        [...recentOrders, ...storefrontOrders].sort(
+          (a, b) => toOrderDate(b.createdAt).getTime() - toOrderDate(a.createdAt).getTime(),
+        ),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load orders");
     } finally {
@@ -54,15 +119,49 @@ export function BusinessOwnerOrdersPage() {
     void fetchOrders();
   }, [fetchOrders]);
 
+  const handleStorefrontStatusChange = async (
+    order: OrderItem,
+    nextStatus: StorefrontOrderStatus,
+  ) => {
+    if (!order.siteName || !order.id || order.status === nextStatus) {
+      return;
+    }
+
+    const previousOrders = orders;
+
+    try {
+      setUpdatingOrderId(order.id);
+      setError(null);
+      setOrders((current) =>
+        current.map((item) =>
+          item.id === order.id && item.type === "storefront"
+            ? { ...item, status: nextStatus }
+            : item,
+        ),
+      );
+
+      await usersApi.updateStorefrontOrderStatus(order.siteName, order.id, nextStatus);
+    } catch (err) {
+      setOrders(previousOrders);
+      setError(err instanceof Error ? err.message : "Failed to update storefront order status");
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
   const filteredOrders = useMemo(() => {
     if (typeFilter === "all") {
       return orders;
     }
+    if (typeFilter === "sold") {
+      return orders.filter((order) => order.type === "sold" || order.type === "storefront");
+    }
     return orders.filter((order) => order.type === typeFilter);
   }, [orders, typeFilter]);
 
-  const soldCount = orders.filter((order) => order.type === "sold").length;
+  const soldCount = orders.filter((order) => order.type === "sold" || order.type === "storefront").length;
   const boughtCount = orders.filter((order) => order.type === "bought").length;
+  const storefrontCount = orders.filter((order) => order.type === "storefront").length;
 
   return (
     <div className="space-y-6">
@@ -81,7 +180,7 @@ export function BusinessOwnerOrdersPage() {
           <select
             value={typeFilter}
             onChange={(e) =>
-              setTypeFilter(e.target.value as "all" | "sold" | "bought")
+              setTypeFilter(e.target.value as "all" | "sold" | "bought" | "storefront")
             }
             className={`px-4 py-2 rounded-xl text-sm border ${
               isDark
@@ -91,6 +190,7 @@ export function BusinessOwnerOrdersPage() {
           >
             <option value="all">All</option>
             <option value="sold">Sold</option>
+            <option value="storefront">Storefront</option>
             <option value="bought">Bought</option>
           </select>
           <button
@@ -104,7 +204,7 @@ export function BusinessOwnerOrdersPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div
           className={`rounded-2xl p-4 ${isDark ? "bg-[#1e1f23]" : "bg-white shadow-sm border border-gray-100"}`}
         >
@@ -131,6 +231,20 @@ export function BusinessOwnerOrdersPage() {
             className={`text-2xl font-bold ${isDark ? "text-green-300" : "text-green-700"}`}
           >
             {soldCount}
+          </p>
+        </div>
+        <div
+          className={`rounded-2xl p-4 ${isDark ? "bg-[#1e1f23]" : "bg-white shadow-sm border border-gray-100"}`}
+        >
+          <p
+            className={`text-sm ${isDark ? "text-gray-500" : "text-gray-500"}`}
+          >
+            Storefront
+          </p>
+          <p
+            className={`text-2xl font-bold ${isDark ? "text-blue-300" : "text-blue-700"}`}
+          >
+            {storefrontCount}
           </p>
         </div>
         <div
@@ -179,12 +293,16 @@ export function BusinessOwnerOrdersPage() {
                     className={`text-xs ${isDark ? "text-gray-500" : "text-gray-500"}`}
                   >
                     {formatOrderDate(order.createdAt)}
+                    {order.siteName ? ` | ${order.siteName}` : ""}
+                    {order.customerName || order.customerEmail
+                      ? ` | ${order.customerName || order.customerEmail}`
+                      : ""}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
                   <span
                     className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                      order.type === "sold"
+                      order.type === "sold" || order.type === "storefront"
                         ? isDark
                           ? "bg-green-500/20 text-green-300"
                           : "bg-green-50 text-green-700"
@@ -193,11 +311,10 @@ export function BusinessOwnerOrdersPage() {
                           : "bg-amber-50 text-amber-700"
                     }`}
                   >
-                    {order.type.toUpperCase()}
+                    {order.sourceLabel || order.type.toUpperCase()}
                   </span>
                   
-                  {/* NEW: Only show status badge if the order type is bought */}
-                  {order.type === "bought" && order.status && (
+                  {order.status && (
                     <span
                       className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
                         isDark
@@ -207,6 +324,31 @@ export function BusinessOwnerOrdersPage() {
                     >
                       {order.status.toUpperCase()}
                     </span>
+                  )}
+
+                  {order.type === "storefront" && order.siteName && (
+                    <select
+                      value={order.status || "pending"}
+                      disabled={updatingOrderId === order.id}
+                      onChange={(event) =>
+                        void handleStorefrontStatusChange(
+                          order,
+                          event.target.value as StorefrontOrderStatus,
+                        )
+                      }
+                      className={`rounded-lg border px-2 py-1 text-xs font-medium outline-none ${
+                        isDark
+                          ? "border-gray-700 bg-black text-gray-200"
+                          : "border-gray-200 bg-white text-gray-700"
+                      }`}
+                      aria-label="Update storefront order status"
+                    >
+                      {storefrontOrderStatuses.map((status) => (
+                        <option key={status} value={status}>
+                          {status.toUpperCase()}
+                        </option>
+                      ))}
+                    </select>
                   )}
 
                   <p

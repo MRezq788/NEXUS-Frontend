@@ -40,6 +40,18 @@ const useSiteProducts = (category?: string, maxItems?: number) => {
   return products;
 };
 
+const resolveStorefrontPath = (siteName: string, path: unknown) => {
+  const rawPath = String(path || "/products").trim() || "/products";
+  const normalizedPath = rawPath.startsWith("/") ? rawPath : `/${rawPath}`;
+  const sitePrefix = `/${siteName}`;
+
+  if (normalizedPath === sitePrefix || normalizedPath.startsWith(`${sitePrefix}/`)) {
+    return normalizedPath;
+  }
+
+  return `${sitePrefix}${normalizedPath}`;
+};
+
 const NavbarBlock = ({
   logo,
   links,
@@ -110,7 +122,7 @@ const HeroBlock = ({
           {String(subtext || "Launch quickly with drag and drop sections")}
         </p>
         <Link
-          to={`/${siteName}${String(ctaLink || "/products")}`}
+          to={resolveStorefrontPath(siteName, ctaLink)}
           className="mt-8 inline-block rounded-full px-6 py-3 text-sm font-semibold"
           style={{
             backgroundColor: String(buttonBgColor || "#047857"),
@@ -137,7 +149,6 @@ const ProductCarouselBlock = ({
     Number(maxItems || 8),
   );
   const finalShowPrice = Boolean(showPrice ?? true);
-  console.log(products);
 
   return (
     <section

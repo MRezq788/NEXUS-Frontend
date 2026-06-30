@@ -224,22 +224,6 @@ export function StorefrontAiAssistant({ siteName, storeName, settings }: Props) 
 
       const payload = (await response.json()) as ChatbotResponse;
       const products = payload.objectsResult || payload.matches || [];
-      console.groupCollapsed(
-        `[Storefront AI] matches for "${text}" (${products.length})`,
-      );
-      console.log("Full chatbot response:", payload);
-      products.forEach((match, index) => {
-        console.log(`Match ${index + 1}`, {
-          similarity: match.similarity,
-          productId: match.product_id || match.object?.id,
-          siteName: match.site_name,
-          product: match.object?.product,
-          variants: match.object?.variants,
-          totalQuantity: match.object?.totalQuantity,
-          fullMatch: match,
-        });
-      });
-      console.groupEnd();
       setMessages((current) => [
         ...current,
         {
@@ -257,10 +241,10 @@ export function StorefrontAiAssistant({ siteName, storeName, settings }: Props) 
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 sm:bottom-6 sm:right-6">
+    <div className="pointer-events-none fixed bottom-4 right-4 z-50 sm:bottom-6 sm:right-6">
       <div
         className={`mb-3 flex h-[min(760px,calc(100vh-7rem))] w-[calc(100vw-2rem)] max-w-[520px] origin-bottom-right flex-col overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-2xl shadow-stone-950/20 transition-all duration-300 ${
-          open ? "translate-y-0 scale-100 opacity-100" : "pointer-events-none translate-y-4 scale-95 opacity-0"
+          open ? "pointer-events-auto translate-y-0 scale-100 opacity-100" : "pointer-events-none translate-y-4 scale-95 opacity-0"
         }`}
       >
         <div className="bg-stone-950 px-5 py-4 text-white">
@@ -354,7 +338,7 @@ export function StorefrontAiAssistant({ siteName, storeName, settings }: Props) 
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
-        className="ml-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-600 text-lg font-black text-white shadow-xl shadow-emerald-900/20 transition hover:-translate-y-1 hover:bg-emerald-700 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+        className="pointer-events-auto ml-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-600 text-lg font-black text-white shadow-xl shadow-emerald-900/20 transition hover:-translate-y-1 hover:bg-emerald-700 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
         aria-label="Open AI assistant"
       >
         AI

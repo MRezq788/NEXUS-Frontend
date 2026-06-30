@@ -61,7 +61,6 @@ export async function fetchApi<T>(
 
   try {
     const token = await getToken();
-    console.log(token);
 
     const response = await fetch(url, {
       method,

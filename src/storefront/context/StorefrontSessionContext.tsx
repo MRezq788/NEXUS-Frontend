@@ -10,6 +10,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -94,6 +95,11 @@ export const StorefrontSessionProvider = ({
   const [cart, setCart] = useState<Array<{ productId: string; variantId?: string; quantity: number }>>([]);
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [loadingUser, setLoadingUser] = useState(true);
+  const cartRef = useRef(cart);
+
+  useEffect(() => {
+    cartRef.current = cart;
+  }, [cart]);
 
   const persistGuestState = useCallback(
     (
@@ -361,10 +367,11 @@ export const StorefrontSessionProvider = ({
 
   const removeFromCart = useCallback(
     async (productId: string, variantId?: string) => {
-      const next = cart.filter(
+      const next = cartRef.current.filter(
         (item) => !(item.productId === productId && (item.variantId || "") === (variantId || "")),
       );
 
+      cartRef.current = next;
       setCart(next);
       if (!user) {
         persistGuestState(next, wishlist);
@@ -381,7 +388,7 @@ export const StorefrontSessionProvider = ({
         })),
       );
     },
-    [cart, persistGuestState, siteName, user, wishlist],
+    [persistGuestState, siteName, user, wishlist],
   );
 
   const toggleWishlist = useCallback(

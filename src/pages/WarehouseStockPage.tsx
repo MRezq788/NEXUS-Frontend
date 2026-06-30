@@ -27,7 +27,6 @@ export function StockPage() {
 
   // Data states
   const [products, setProducts] = useState<Product[]>([]);
-  const [totalProducts, setTotalProducts] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
   // Pagination states
@@ -113,9 +112,7 @@ export function StockPage() {
         search: searchQuery || undefined,
         status: filterStatus,
       });
-      console.log("total products:", totalProducts);
       setProducts(response.products);
-      setTotalProducts(response.total);
       setTotalPages(response.totalPages);
       setSelectedProducts(new Set());
     } catch (error) {

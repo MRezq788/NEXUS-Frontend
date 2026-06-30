@@ -68,7 +68,6 @@ export const BusinessOwnerDashboard = ({
 
     try {
       const response = await usersApi.getMostSoldProducts(userId, 5);
-      console.log(response);
 
       if (response.success && response.data?.mostSoldProducts) {
         const products: ActivityData[] = response.data.mostSoldProducts.map(
