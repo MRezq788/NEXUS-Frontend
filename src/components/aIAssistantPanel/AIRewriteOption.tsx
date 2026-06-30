@@ -12,7 +12,13 @@ import { useTranslation } from "react-i18next";
 import { SmallSpinnerLoader } from "../shared/rebrand/loaders";
 
 type Props = {
-  type: "proofread" | "rewrite" | "friendly" | "professional" | "concise" | "compose";
+  type:
+    | "proofread"
+    | "rewrite"
+    | "friendly"
+    | "professional"
+    | "concise"
+    | "compose";
   title: string;
   changeHeight: (newHeight: number) => void;
   changeWidth: (newWidth: number) => void;
@@ -54,7 +60,7 @@ export default function AIRewriteOption({
   const undo = () => {
     if (currentIdx > 0) setCurrentIdx(currentIdx - 1);
   };
-
+  //
   const redo = () => {
     if (currentIdx < responses.length - 1) setCurrentIdx(currentIdx + 1);
   };
@@ -85,7 +91,7 @@ export default function AIRewriteOption({
         type,
         activeInputIdx === 0 ? getInputsValue().en : getInputsValue().ar,
         activeInputIdx === 0 ? "english" : "arabic",
-        type === "compose" ? composeInputRef.current?.value : undefined
+        type === "compose" ? composeInputRef.current?.value : undefined,
       );
       const newResponses = [...responses.slice(0, currentIdx + 1), response];
       setResponses(newResponses);

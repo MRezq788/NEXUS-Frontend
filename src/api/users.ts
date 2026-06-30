@@ -307,9 +307,12 @@ export const usersApi = {
   },
 
   getStorefrontOrders: async (limit?: number) => {
-    return fetchApi<{ orders: OwnerStorefrontOrder[] }>(`/users/storefront-orders`, {
-      params: { limit },
-    });
+    return fetchApi<{ orders: OwnerStorefrontOrder[] }>(
+      `/users/storefront-orders`,
+      {
+        params: { limit },
+      },
+    );
   },
 
   updateStorefrontOrderStatus: async (
@@ -350,7 +353,9 @@ export const usersApi = {
   },
 
   getStoreAllocationOwnerProducts: async () => {
-    return fetchApi<{ products: StoreAllocationProduct[] }>(`/users/stores/products`);
+    return fetchApi<{ products: StoreAllocationProduct[] }>(
+      `/users/stores/products`,
+    );
   },
 
   getAllocatedProductsForStore: async (siteName: string) => {
@@ -360,10 +365,13 @@ export const usersApi = {
   },
 
   allocateProductToStore: async (payload: AllocateProductToStorePayload) => {
-    return fetchApi<AllocateProductToStoreResult>(`/users/stores/allocate-product`, {
-      method: "POST",
-      body: payload as unknown as Record<string, unknown>,
-    });
+    return fetchApi<AllocateProductToStoreResult>(
+      `/users/stores/allocate-product`,
+      {
+        method: "POST",
+        body: payload as unknown as Record<string, unknown>,
+      },
+    );
   },
 
   getCashiers: async () => {
@@ -381,10 +389,13 @@ export const usersApi = {
   },
 
   allocateInventoryToCashier: async (payload: InventoryAllocationPayload) => {
-    return fetchApi<InventoryAllocationResult>(`/users/cashiers/allocate-inventory`, {
-      method: "POST",
-      body: payload as unknown as Record<string, unknown>,
-    });
+    return fetchApi<InventoryAllocationResult>(
+      `/users/cashiers/allocate-inventory`,
+      {
+        method: "POST",
+        body: payload as unknown as Record<string, unknown>,
+      },
+    );
   },
 
   returnInventoryFromCashier: async (payload: ReturnInventoryPayload) => {
@@ -395,9 +406,12 @@ export const usersApi = {
   },
 
   getAllocationHistory: async (limit: number = 20) => {
-    return fetchApi<{ history: AllocationHistoryEntry[] }>(`/users/allocations/history`, {
-      params: { limit },
-    });
+    return fetchApi<{ history: AllocationHistoryEntry[] }>(
+      `/users/allocations/history`,
+      {
+        params: { limit },
+      },
+    );
   },
 
   createCashierPosSale: async (
